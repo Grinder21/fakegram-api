@@ -20,6 +20,13 @@ export class AuthController {
     return 'TODO: login';
   }
 
+  // POST /auth/refresh - public
+  // refresh из cookie - получить новый accessToken
+  @Post('refresh')
+  refresh() {
+    return 'TODO: refresh';
+  }
+
   // POST /auth/logout - только с access-token
   // погасить refresh-токены user, чистить cookie
   // 204 - OK, 401 - нет/невалидный access-token
