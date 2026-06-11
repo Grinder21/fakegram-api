@@ -4,8 +4,7 @@ import { Controller, Post, Get, Patch, Delete } from '@nestjs/common';
 export class AlbumsController {
   // POST /albums - только access-token
   // {title} -> {album}
-  // 201 - OK create, 400 - bad request, 401 - unauthorized,
-  // 403 - forbidden, 404 - not found
+  // 201 - OK create, 400 - bad request, 401 - unauthorized
   @Post()
   createAlbum() {
     return 'TODO: create album';
@@ -14,7 +13,7 @@ export class AlbumsController {
   // GET /albums/:id - только access-token
   //  - -> {album}
   // 200 - OK, 400 - bad request, 401 - unauthorized,
-  // 403 - forbidden, 404 - not found
+  // 404 - not found
   @Get(':id')
   getAlbum() {
     return 'TODO: get album';
@@ -22,14 +21,14 @@ export class AlbumsController {
 
   // GET /albums/:id/photos - только с access-token
   // - -> {photos[]}
-  // 200 - OK, 204 - OK (not content), 400 - bad request,
-  // 401 - unauthorized, 403 - forbidden, 404 - not found
+  // 200 - OK, 400 - bad request,
+  // 401 - unauthorized, 404 - not found
   @Get(':id/photos')
   checkPhotos() {
     return 'TODO: check photos in albums';
   }
 
-  // PATCH /albums/:id - только access-token
+  // PATCH /albums/:id - только владелец
   // {title?} -> {album}
   // 200 - OK, 400 - bad request, 401 - unauthorized,
   // 403 - forbidden, 404 - not found
@@ -38,7 +37,7 @@ export class AlbumsController {
     return 'TODO: edit album';
   }
 
-  // DELETE /albums/:id - только access-token
+  // DELETE /albums/:id - только владелец
   // - -> 204
   // 204 - OK (no content), 400 - bad request, 401 - unauthorized,
   // 403 - forbidden, 404 - not found

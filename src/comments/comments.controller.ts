@@ -5,13 +5,13 @@ export class CommentsController {
   // POST /comments - только с access-token
   // {body, photoId} -> {comment}
   // 201 - OK create, 400 - bad request, 401 - unauthorized,
-  // 403 - forbidden, 404 - not found
+  // 404 - not found
   @Post()
-  editComments() {
-    return 'TODO: edit comments';
+  createComment() {
+    return 'TODO: create comments';
   }
 
-  // DELETE /comments/:id - только с access-token
+  // DELETE /comments/:id - только владелец
   // - -> 204
   // 204 - OK (not content), 400 - bad request, 401 - unauthorized,
   // 403 - forbidden, 404 - not found

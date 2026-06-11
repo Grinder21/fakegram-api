@@ -14,7 +14,7 @@ export class AuthController {
   // POST /auth/login - public
   // body: {email, password}
   // проверить пароль, отдать accessToken + поставить refresh cookie
-  // 201 - OK, 400 - тело, 401 - неверные credentials
+  // 200 - OK, 400 - тело, 401 - неверные credentials
   @Post('login')
   login() {
     return 'TODO: login';
@@ -22,6 +22,8 @@ export class AuthController {
 
   // POST /auth/refresh - public
   // refresh из cookie - получить новый accessToken
+  // гасить старый refresh, выдать новый
+  // 200 - OK, 401 - нет/невалидный access-token
   @Post('refresh')
   refresh() {
     return 'TODO: refresh';
