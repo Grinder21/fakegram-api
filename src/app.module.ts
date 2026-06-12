@@ -6,9 +6,17 @@ import { UsersModule } from './users/users.module';
 import { AlbumsModule } from './albums/albums.module';
 import { PhotosModule } from './photos/photos.module';
 import { CommentsModule } from './comments/comments.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [AuthModule, UsersModule, AlbumsModule, PhotosModule, CommentsModule],
+  imports: [
+    AuthModule,
+    UsersModule,
+    AlbumsModule,
+    PhotosModule,
+    CommentsModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
