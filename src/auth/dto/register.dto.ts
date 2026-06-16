@@ -8,17 +8,17 @@ import {
 
 export class RegisterDto {
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
   @MinLength(3)
   @MaxLength(30)
-  username: string;
+  username!: string;
 
   @IsString()
   @MinLength(8)
   @MaxLength(256)
-  password: string;
+  password!: string;
 
   @IsOptional()
   @IsString()

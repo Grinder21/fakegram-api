@@ -1,14 +1,17 @@
-import { Controller, Post, Get } from '@nestjs/common';
+import { Controller, Post, Get, Body } from '@nestjs/common';
+import { RegisterDto } from './dto/register.dto';
+import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
+  constructor(private authService: AuthService) {}
   // POST /auth/register - public
   // body: {email, username, password, displayName? }
   // создать user, хэшировать пароль, отдать accessToken + поставить refresh в httpOnly cookie
   // 201 - OK, 400 - невалидное тело, 409 - email/username заняты
   @Post('register')
-  register() {
-    return 'TODO: register';
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 
   // POST /auth/login - public
