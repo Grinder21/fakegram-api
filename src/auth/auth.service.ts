@@ -61,6 +61,50 @@ export class AuthService {
     return { user: userWithoutHash, ...tokens };
   }
 
+  async refresh(cookieToken: string) {
+    const [recordId, rawToken] = cookieToken.split(':');
+
+    if (!recordId || !rawToken) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const record = await this.prisma.refreshToken.findUnique({
+      where: { id: recordId },
+      include: { user: { omit: { passwordHash: true } } },
+    });
+
+    if (!record || record.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token expired or not found');
+    }
+
+    const tokenValid = await bcrypt.compare(rawToken, record.tokenHash);
+    if (!tokenValid) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    await this.prisma.refreshToken.delete({ where: { id: recordId } });
+
+    const tokens = await this.generateTokens(
+      record.userId,
+      record.user.username,
+    );
+    return { user: record.user, ...tokens };
+  }
+
+  async logout(cookieToken: string) {
+    const [recordId] = cookieToken.split(':');
+    if (recordId) {
+      await this.prisma.refreshToken.deleteMany({ where: { id: recordId } });
+    }
+  }
+
+  async getMe(userId: string) {
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      omit: { passwordHash: true },
+    });
+  }
+
   private async generateTokens(userId: string, username: string) {
     const accessToken = this.jwt.sign({ sub: userId, username });
 
@@ -71,13 +115,13 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
-    await this.prisma.refreshToken.create({
+    const { id: recordId } = await this.prisma.refreshToken.create({
       data: { userId, tokenHash, expiresAt },
     });
 
     return {
       accessToken,
-      refreshToken: rawToken,
+      refreshToken: `${recordId}:${rawToken}`,
       refreshTokenExpiresAt: expiresAt,
     };
   }

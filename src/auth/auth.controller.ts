@@ -1,12 +1,25 @@
-import { Controller, Post, Get, Body, Res, HttpCode } from '@nestjs/common';
-import type { Response } from 'express';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Req,
+  Res,
+  HttpCode,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
+import { JwtGuard } from './guards/jwt.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
   // POST /auth/register - public
   // body: {email, username, password, displayName? }
   // создать user, хэшировать пароль, отдать accessToken + поставить refresh в httpOnly cookie
@@ -28,6 +41,10 @@ export class AuthController {
     return result;
   }
 
+  // POST /auth/login - public
+  // body: {email, password}
+  // проверить пароль, отдать accessToken + поставить refresh cookie
+  // 200 - OK, 400 - тело, 401 - неверные credentials
   @Post('login')
   @HttpCode(200)
   async login(
@@ -51,24 +68,50 @@ export class AuthController {
   // гасить старый refresh, выдать новый
   // 200 - OK, 401 - нет/невалидный refresh-token
   @Post('refresh')
-  refresh() {
-    return 'TODO: refresh';
+  @HttpCode(200)
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const raw: unknown = req.cookies?.refreshToken;
+    const token = typeof raw === 'string' ? raw : undefined;
+    if (!token) {
+      throw new UnauthorizedException('No refresh token');
+    }
+
+    const { refreshToken, refreshTokenExpiresAt, ...result } =
+      await this.authService.refresh(token);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      sameSite: 'strict',
+      expires: refreshTokenExpiresAt,
+    });
+
+    return result;
   }
 
   // POST /auth/logout - только с access-token
   // погасить refresh-токены user, чистить cookie
   // 204 - OK, 401 - нет/невалидный access-token
+  @UseGuards(JwtGuard)
   @HttpCode(204)
   @Post('logout')
-  logout() {
-    return 'TODO: logout';
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const raw: unknown = req.cookies?.refreshToken;
+    const token = typeof raw === 'string' ? raw : undefined;
+    if (token) {
+      await this.authService.logout(token);
+    }
+    res.clearCookie('refreshToken');
   }
 
   // GET /auth/me - только с access-token
   // отдать текущего user (без password_hash)
   // 200 - OK, 401 - нет/невалидный access-token
+  @UseGuards(JwtGuard)
   @Get('me')
-  me() {
-    return 'TODO: me';
+  async me(@CurrentUser() user: { sub: string }) {
+    return this.authService.getMe(user.sub);
   }
 }
