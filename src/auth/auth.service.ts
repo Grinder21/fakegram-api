@@ -111,7 +111,7 @@ export class AuthService {
     const rawToken = randomBytes(40).toString('hex');
     const tokenHash = await bcrypt.hash(rawToken, 10);
 
-    const days = this.config.get<number>('REFRESH_TOKEN_TTL_DAYS', 30);
+    const days = Number(this.config.get<number>('REFRESH_TOKEN_TTL_DAYS', 30));
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
