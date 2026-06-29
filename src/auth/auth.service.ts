@@ -112,7 +112,7 @@ export class AuthService {
     const tokenHash = await bcrypt.hash(rawToken, 10);
 
     const days = Number(this.config.get<number>('REFRESH_TOKEN_TTL_DAYS', 30));
-    const expiresAt = new Date();
+    const expiresAt = new Date(); // Date.now - timestamp
     expiresAt.setDate(expiresAt.getDate() + days);
 
     const { id: recordId } = await this.prisma.refreshToken.create({

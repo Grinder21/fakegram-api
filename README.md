@@ -1,98 +1,177 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Fakegram API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Бэкенд мини-Instagram на NestJS. Реализует аутентификацию через JWT + refresh-токены, управление пользователями, альбомами, фотографиями и комментариями.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Стек
 
-## Description
+| Слой           | Технология                               |
+| -------------- | ---------------------------------------- |
+| Фреймворк      | NestJS (Node.js + TypeScript)            |
+| База данных    | PostgreSQL 16                            |
+| ORM            | Prisma                                   |
+| Аутентификация | JWT (access) + httpOnly cookie (refresh) |
+| Валидация      | class-validator / class-transformer      |
+| Запуск БД      | Docker Compose                           |
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## Запуск проекта локально
+
+### Предварительные требования
+
+- [Node.js](https://nodejs.org/) 20+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (для PostgreSQL)
+- npm
+
+### 1. Клонировать репозиторий
 
 ```bash
-$ npm install
+git clone <repo-url>
+cd fakegram-api
 ```
 
-## Compile and run the project
+### 2. Создать файл `.env`
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cp .env.example .env
 ```
 
-## Run tests
+Заполнить `.env`:
+
+```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=fakegram
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fakegram
+NODE_ENV=development
+CLIENT_ORIGIN=http://localhost:3000
+COOKIE_SECRET=some-random-secret-32-chars-min
+JWT_ACCESS_SECRET=another-random-secret-for-jwt
+ACCESS_TOKEN_TTL=15m
+REFRESH_TOKEN_TTL_DAYS=30
+```
+
+### 3. Поднять базу данных
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker compose up -d
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Проверить что контейнер запустился:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker compose ps
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 4. Установить зависимости и применить миграции
 
-## Resources
+```bash
+npm install
+npx prisma migrate deploy
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### 5. Запустить сервер
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+# dev-режим с hot reload
+npm run start:dev
 
-## Support
+# или обычный запуск
+npm run start
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+API доступен на `http://localhost:3000`.
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Эндпоинты
 
-## License
+### Auth
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+| Метод | Путь             | Доступ     | Описание              |
+| ----- | ---------------- | ---------- | --------------------- |
+| POST  | `/auth/register` | Публичный  | Регистрация           |
+| POST  | `/auth/login`    | Публичный  | Вход                  |
+| POST  | `/auth/refresh`  | Публичный  | Обновить access-токен |
+| POST  | `/auth/logout`   | Bearer JWT | Выход                 |
+| GET   | `/auth/me`       | Bearer JWT | Текущий пользователь  |
+
+### Остальные ресурсы (в разработке)
+
+| Метод        | Путь        | Доступ | Описание     |
+| ------------ | ----------- | ------ | ------------ |
+| GET/POST/... | `/users`    | —      | Пользователи |
+| GET/POST/... | `/albums`   | —      | Альбомы      |
+| GET/POST/... | `/photos`   | —      | Фотографии   |
+| GET/POST/... | `/comments` | —      | Комментарии  |
+
+### Пример: регистрация
+
+```http
+POST /auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "username": "johndoe",
+  "password": "secret123",
+  "displayName": "John Doe"
+}
+```
+
+Ответ `201`:
+
+```json
+{
+  "accessToken": "eyJhbGci...",
+  "user": { "id": "...", "username": "johndoe", "email": "user@example.com" }
+}
+```
+
+Refresh-токен устанавливается в httpOnly cookie `refreshToken`. В ответе тела его **нет**.
+
+### Пример: использование access-токена
+
+```http
+GET /auth/me
+Authorization: Bearer eyJhbGci...
+```
+
+### Пример: обновление токенов
+
+```http
+POST /auth/refresh
+Cookie: refreshToken=<uuid>:<hex>
+```
+
+Ответ `200` — новый `accessToken` в теле, новый `refreshToken` в cookie (старый инвалидируется).
+
+---
+
+## Как устроена аутентификация
+
+```
+Клиент                          Сервер
+  │                               │
+  │── POST /auth/login ──────────►│
+  │                               │ 1. Проверяет пароль (bcrypt)
+  │                               │ 2. Создаёт запись RefreshToken в БД (хранит bcrypt-хэш)
+  │                               │ 3. Выдаёт accessToken (JWT, 15 мин)
+  │◄─ 200 + Set-Cookie ──────────│    refreshToken в httpOnly cookie (30 дней)
+  │
+  │ ... через 15 минут accessToken истёк ...
+  │
+  │── POST /auth/refresh ────────►│
+  │   Cookie: refreshToken=id:raw │ 1. Ищет запись по id
+  │                               │ 2. Сверяет raw с хэшем в БД (bcrypt.compare)
+  │                               │ 3. УДАЛЯЕТ старую запись (rotation!)
+  │                               │ 4. Создаёт новую запись
+  │◄─ 200 + Set-Cookie ──────────│ 5. Выдаёт новый accessToken + новый refreshToken
+```
+
+**Ключевые решения:**
+
+- Refresh-токен хранится в БД как bcrypt-хэш — утечка таблицы не даёт рабочих токенов
+- Формат cookie: `<uuid-записи>:<40-байт-hex>` — быстрый поиск по id, проверка по хэшу
+- Rotation: старый refresh удаляется при каждом `/refresh` — replay attack невозможен
+- Один пользователь может иметь **несколько** refresh-токенов (multi-device)
