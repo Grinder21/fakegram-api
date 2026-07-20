@@ -15,6 +15,7 @@ import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
 import { JwtGuard } from './guards/jwt.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
+import type { JwtPayload } from './types/jwt-payload';
 
 @Controller('auth')
 export class AuthController {
@@ -111,7 +112,7 @@ export class AuthController {
   // 200 - OK, 401 - нет/невалидный access-token
   @UseGuards(JwtGuard)
   @Get('me')
-  async me(@CurrentUser() user: { sub: string }) {
+  async me(@CurrentUser() user: JwtPayload) {
     return this.authService.getMe(user.sub);
   }
 }
