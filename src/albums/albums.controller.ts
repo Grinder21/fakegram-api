@@ -1,13 +1,33 @@
-import { Controller, Post, Get, Patch, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { AlbumsService } from './albums.service';
+import { CreateAlbumDto } from './dto/create-album.dto';
+import { UpdateAlbumDto } from './dto/update-album.dto';
+import { JwtGuard } from '../auth/guards/jwt.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtPayload } from '../auth/types/jwt-payload';
 
+@UseGuards(JwtGuard)
 @Controller('albums')
 export class AlbumsController {
+  constructor(private albumsService: AlbumsService) {}
+
   // POST /albums - только access-token
   // {title} -> {album}
   // 201 - OK create, 400 - bad request, 401 - unauthorized
   @Post()
-  createAlbum() {
-    return 'TODO: create album';
+  createAlbum(@CurrentUser() user: JwtPayload, @Body() dto: CreateAlbumDto) {
+    return this.albumsService.create(user.sub, dto);
   }
 
   // GET /albums/:id - только access-token
@@ -15,8 +35,8 @@ export class AlbumsController {
   // 200 - OK, 400 - bad request, 401 - unauthorized,
   // 404 - not found
   @Get(':id')
-  getAlbum() {
-    return 'TODO: get album';
+  getAlbum(@Param('id', ParseUUIDPipe) id: string) {
+    return this.albumsService.findOne(id);
   }
 
   // GET /albums/:id/photos - только с access-token
@@ -24,8 +44,8 @@ export class AlbumsController {
   // 200 - OK, 400 - bad request,
   // 401 - unauthorized, 404 - not found
   @Get(':id/photos')
-  checkPhotos() {
-    return 'TODO: check photos in albums';
+  checkPhotos(@Param('id', ParseUUIDPipe) id: string) {
+    return this.albumsService.findPhotos(id);
   }
 
   // PATCH /albums/:id - только владелец
@@ -33,8 +53,12 @@ export class AlbumsController {
   // 200 - OK, 400 - bad request, 401 - unauthorized,
   // 403 - forbidden, 404 - not found
   @Patch(':id')
-  editAlbum() {
-    return 'TODO: edit album';
+  editAlbum(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateAlbumDto,
+  ) {
+    return this.albumsService.update(id, user.sub, dto);
   }
 
   // DELETE /albums/:id - только владелец
@@ -42,7 +66,11 @@ export class AlbumsController {
   // 204 - OK (no content), 400 - bad request, 401 - unauthorized,
   // 403 - forbidden, 404 - not found
   @Delete(':id')
-  deleteAlbum() {
-    return 'TODO: delete album';
+  @HttpCode(204)
+  deleteAlbum(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.albumsService.remove(id, user.sub);
   }
 }
