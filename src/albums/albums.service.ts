@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
+import { Prisma } from '../generated/prisma/client';
 
 @Injectable()
 export class AlbumsService {
@@ -26,26 +27,50 @@ export class AlbumsService {
   }
 
   async findPhotos(albumId: string) {
-    await this.findOne(albumId);
-
-    return this.prisma.photo.findMany({
+    const photos = await this.prisma.photo.findMany({
       where: { albumId },
       orderBy: { createdAt: 'desc' },
     });
+
+    if (photos.length === 0) {
+      const album = await this.prisma.album.findUnique({
+        where: { id: albumId },
+        select: { id: true },
+      });
+
+      if (!album) {
+        throw new NotFoundException('Album not found');
+      }
+    }
+
+    return photos;
   }
 
   async update(id: string, userId: string, dto: UpdateAlbumDto) {
-    await this.findOwned(id, userId);
+    const album = await this.findOwned(id, userId);
 
-    return this.prisma.album.update({
-      where: { id },
-      data: { title: dto.title },
-    });
+    if (dto.title === undefined) {
+      return album;
+    }
+
+    try {
+      return await this.prisma.album.update({
+        where: { id },
+        data: { title: dto.title },
+      });
+    } catch (error) {
+      throw this.mapMissingRecord(error, 'Album not found');
+    }
   }
 
   async remove(id: string, userId: string) {
     await this.findOwned(id, userId);
-    await this.prisma.album.delete({ where: { id } });
+
+    try {
+      await this.prisma.album.delete({ where: { id } });
+    } catch (error) {
+      throw this.mapMissingRecord(error, 'Album not found');
+    }
   }
 
   private async findOwned(id: string, userId: string) {
@@ -54,5 +79,15 @@ export class AlbumsService {
       throw new ForbiddenException('You are not the owner of this album');
     }
     return album;
+  }
+
+  private mapMissingRecord(error: unknown, message: string): unknown {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return new NotFoundException(message);
+    }
+    return error;
   }
 }
