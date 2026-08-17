@@ -91,11 +91,8 @@ export class AuthService {
     return { user: record.user, ...tokens };
   }
 
-  async logout(cookieToken: string) {
-    const [recordId] = cookieToken.split(':');
-    if (recordId) {
-      await this.prisma.refreshToken.deleteMany({ where: { id: recordId } });
-    }
+  async logout(userId: string) {
+    await this.prisma.refreshToken.deleteMany({ where: { userId } });
   }
 
   async getMe(userId: string) {
