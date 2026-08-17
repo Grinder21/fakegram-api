@@ -13,9 +13,9 @@ import type { Request, Response } from 'express';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
-import { JwtGuard } from './guards/jwt.guard';
-import { CurrentUser } from './decorators/current-user.decorator';
-import type { JwtPayload } from './types/jwt-payload';
+import { JwtGuard } from '../common/guards/jwt.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { JwtPayload } from '../common/types/jwt-payload';
 
 @Controller('auth')
 export class AuthController {

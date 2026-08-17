@@ -13,9 +13,9 @@ import {
 import { AlbumsService } from './albums.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
-import { JwtGuard } from '../auth/guards/jwt.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { JwtPayload } from '../auth/types/jwt-payload';
+import { JwtGuard } from '../common/guards/jwt.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { JwtPayload } from '../common/types/jwt-payload';
 
 @UseGuards(JwtGuard)
 @Controller('albums')
