@@ -5,4 +5,4 @@ export interface JwtPayload {
   username: string;
 }
 
-export type AuthenticatedRequest = Request & { user: JwtPayload };
+export type AuthenticatedRequest = Request & { user?: JwtPayload };

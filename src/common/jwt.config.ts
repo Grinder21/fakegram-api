@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtModuleAsyncOptions } from '@nestjs/jwt';
-import { StringValue } from 'ms';
+import type { StringValue } from 'ms';
 
 export const jwtConfig: JwtModuleAsyncOptions = {
   global: true,
