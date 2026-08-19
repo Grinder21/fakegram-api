@@ -7,7 +7,7 @@
 | Слой           | Технология                               |
 | -------------- | ---------------------------------------- |
 | Фреймворк      | NestJS (Node.js + TypeScript)            |
-| База данных    | PostgreSQL 16                            |
+| База данных    | PostgreSQL 18                            |
 | ORM            | Prisma                                   |
 | Аутентификация | JWT (access) + httpOnly cookie (refresh) |
 | Валидация      | class-validator / class-transformer      |
