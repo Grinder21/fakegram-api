@@ -93,17 +93,16 @@ export class AuthController {
   }
 
   // POST /auth/logout - только с access-token
-  // погасить refresh-токены user, чистить cookie
+  // погасить все refresh-токены user (выход со всех устройств), чистить cookie
   // 204 - OK, 401 - нет/невалидный access-token
   @UseGuards(JwtGuard)
   @HttpCode(204)
   @Post('logout')
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const raw: unknown = req.cookies?.refreshToken;
-    const token = typeof raw === 'string' ? raw : undefined;
-    if (token) {
-      await this.authService.logout(token);
-    }
+  async logout(
+    @CurrentUser() user: JwtPayload,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.logout(user.sub);
     res.clearCookie('refreshToken');
   }
 
