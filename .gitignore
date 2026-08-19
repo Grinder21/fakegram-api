@@ -4,6 +4,8 @@
 /build
 /postgres_data
 
+/postgres_data
+
 # Logs
 logs
 *.log
