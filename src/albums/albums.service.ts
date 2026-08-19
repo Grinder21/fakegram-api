@@ -27,23 +27,16 @@ export class AlbumsService {
   }
 
   async findPhotos(albumId: string) {
-    const photos = await this.prisma.photo.findMany({
-      where: { albumId },
-      orderBy: { createdAt: 'desc' },
+    const album = await this.prisma.album.findUnique({
+      where: { id: albumId },
+      include: { photos: { orderBy: { createdAt: 'desc' } } },
     });
 
-    if (photos.length === 0) {
-      const album = await this.prisma.album.findUnique({
-        where: { id: albumId },
-        select: { id: true },
-      });
-
-      if (!album) {
-        throw new NotFoundException('Album not found');
-      }
+    if (!album) {
+      throw new NotFoundException('Album not found');
     }
 
-    return photos;
+    return album.photos;
   }
 
   async update(id: string, userId: string, dto: UpdateAlbumDto) {
@@ -59,7 +52,7 @@ export class AlbumsService {
         data: { title: dto.title },
       });
     } catch (error) {
-      throw this.mapMissingRecord(error, 'Album not found');
+      this.throwIfMissing(error, 'Album not found');
     }
   }
 
@@ -69,7 +62,7 @@ export class AlbumsService {
     try {
       await this.prisma.album.delete({ where: { id } });
     } catch (error) {
-      throw this.mapMissingRecord(error, 'Album not found');
+      this.throwIfMissing(error, 'Album not found');
     }
   }
 
@@ -81,13 +74,13 @@ export class AlbumsService {
     return album;
   }
 
-  private mapMissingRecord(error: unknown, message: string): unknown {
+  private throwIfMissing(error: unknown, message: string): never {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2025'
     ) {
-      return new NotFoundException(message);
+      throw new NotFoundException(message);
     }
-    return error;
+    throw error;
   }
 }
