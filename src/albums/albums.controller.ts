@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AlbumsService } from './albums.service';
@@ -16,6 +17,7 @@ import { UpdateAlbumDto } from './dto/update-album.dto';
 import { JwtGuard } from '../common/guards/jwt.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../common/types/jwt-payload';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @UseGuards(JwtGuard)
 @Controller('albums')
@@ -44,8 +46,11 @@ export class AlbumsController {
   // 200 - OK, 400 - bad request,
   // 401 - unauthorized, 404 - not found
   @Get(':id/photos')
-  checkPhotos(@Param('id', ParseUUIDPipe) id: string) {
-    return this.albumsService.findPhotos(id);
+  checkPhotos(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() pagination: PaginationDto,
+  ) {
+    return this.albumsService.findPhotos(id, pagination);
   }
 
   // PATCH /albums/:id - только владелец

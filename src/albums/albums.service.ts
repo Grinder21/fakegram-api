@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { Prisma } from '../generated/prisma/client';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class AlbumsService {
@@ -26,17 +27,34 @@ export class AlbumsService {
     return album;
   }
 
-  async findPhotos(albumId: string) {
+  async findPhotos(albumId: string, pagination: PaginationDto) {
+    const limit = pagination.limit ?? 20;
+    const cursor = pagination.cursor;
     const album = await this.prisma.album.findUnique({
       where: { id: albumId },
-      include: { photos: { orderBy: { createdAt: 'desc' } } },
+      include: {
+        photos: {
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          take: limit + 1,
+          skip: cursor ? 1 : 0,
+          cursor: cursor ? { id: cursor } : undefined,
+        },
+      },
     });
 
     if (!album) {
       throw new NotFoundException('Album not found');
     }
 
-    return album.photos;
+    const photos = album.photos;
+    const hasMore = photos.length > limit;
+    const items = hasMore ? photos.slice(0, limit) : photos;
+
+    return {
+      items,
+      hasMore,
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+    };
   }
 
   async update(id: string, userId: string, dto: UpdateAlbumDto) {
