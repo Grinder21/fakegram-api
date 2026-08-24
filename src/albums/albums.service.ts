@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -28,8 +29,18 @@ export class AlbumsService {
   }
 
   async findPhotos(albumId: string, pagination: PaginationDto) {
-    const limit = pagination.limit ?? 20;
+    const limit = pagination.limit;
     const cursor = pagination.cursor;
+    if (cursor) {
+      const cursorPhoto = await this.prisma.photo.findFirst({
+        where: { id: cursor, albumId },
+        select: { id: true },
+      });
+
+      if (!cursorPhoto) {
+        throw new BadRequestException('Cursor does not belong to this album');
+      }
+    }
     const album = await this.prisma.album.findUnique({
       where: { id: albumId },
       include: {

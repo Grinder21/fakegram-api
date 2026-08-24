@@ -1,9 +1,9 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
 
 export class PaginationDto {
   @IsOptional()
-  @IsString()
+  @IsUUID()
   cursor?: string;
 
   @IsOptional()
@@ -11,5 +11,5 @@ export class PaginationDto {
   @IsInt()
   @Min(1)
   @Max(100)
-  limit?: number = 20;
+  limit: number = 20;
 }

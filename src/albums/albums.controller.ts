@@ -42,7 +42,7 @@ export class AlbumsController {
   }
 
   // GET /albums/:id/photos - только с access-token
-  // - -> {photos[]}
+  // - -> {items, hasMore, nextCursor}
   // 200 - OK, 400 - bad request,
   // 401 - unauthorized, 404 - not found
   @Get(':id/photos')
