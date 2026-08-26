@@ -1,5 +1,7 @@
-import { Controller, Get, Patch } from '@nestjs/common';
+import { Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { JwtGuard } from '../common/guards/jwt.guard';
 
+@UseGuards(JwtGuard)
 @Controller('users')
 export class UsersController {
   // GET /users/:id - только с access-token

@@ -1,5 +1,7 @@
-import { Controller, Post, Delete } from '@nestjs/common';
+import { Controller, Post, Delete, UseGuards } from '@nestjs/common';
+import { JwtGuard } from '../common/guards/jwt.guard';
 
+@UseGuards(JwtGuard)
 @Controller('comments')
 export class CommentsController {
   // POST /comments - только с access-token

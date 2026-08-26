@@ -1,5 +1,14 @@
-import { Controller, Post, Get, Patch, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
+import { JwtGuard } from '../common/guards/jwt.guard';
 
+@UseGuards(JwtGuard)
 @Controller('photos')
 export class PhotosController {
   // POST /photos - только владелец
