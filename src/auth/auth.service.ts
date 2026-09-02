@@ -6,7 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -62,14 +62,8 @@ export class AuthService {
   }
 
   async refresh(cookieToken: string) {
-    const [recordId, rawToken] = cookieToken.split(':');
-
-    if (!recordId || !rawToken) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
     const record = await this.prisma.refreshToken.findUnique({
-      where: { id: recordId },
+      where: { tokenHash: this.hashToken(cookieToken) },
       include: { user: { omit: { passwordHash: true } } },
     });
 
@@ -77,12 +71,7 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token expired or not found');
     }
 
-    const tokenValid = await bcrypt.compare(rawToken, record.tokenHash);
-    if (!tokenValid) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    await this.prisma.refreshToken.delete({ where: { id: recordId } });
+    await this.prisma.refreshToken.delete({ where: { id: record.id } });
 
     const tokens = await this.generateTokens(
       record.userId,
@@ -106,20 +95,24 @@ export class AuthService {
     const accessToken = this.jwt.sign({ sub: userId, username });
 
     const rawToken = randomBytes(40).toString('hex');
-    const tokenHash = await bcrypt.hash(rawToken, 10);
+    const tokenHash = this.hashToken(rawToken);
 
     const days = Number(this.config.get<number>('REFRESH_TOKEN_TTL_DAYS', 30));
     const expiresAt = new Date(); // Date.now - timestamp
     expiresAt.setDate(expiresAt.getDate() + days);
 
-    const { id: recordId } = await this.prisma.refreshToken.create({
+    await this.prisma.refreshToken.create({
       data: { userId, tokenHash, expiresAt },
     });
 
     return {
       accessToken,
-      refreshToken: `${recordId}:${rawToken}`,
+      refreshToken: rawToken,
       refreshTokenExpiresAt: expiresAt,
     };
+  }
+
+  private hashToken(raw: string): string {
+    return createHash('sha256').update(raw).digest('hex');
   }
 }
