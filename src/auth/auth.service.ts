@@ -4,10 +4,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import { randomBytes, createHash } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { RefreshTokenService } from './refresh-token.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -16,7 +15,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
-    private config: ConfigService,
+    private refreshTokens: RefreshTokenService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -38,7 +37,7 @@ export class AuthService {
       omit: { passwordHash: true },
     });
 
-    const tokens = await this.generateTokens(user.id, user.username);
+    const tokens = await this.issueSession(user.id, user.username);
     return { user, ...tokens };
   }
 
@@ -57,31 +56,18 @@ export class AuthService {
     }
 
     const { passwordHash: _, ...userWithoutHash } = user;
-    const tokens = await this.generateTokens(user.id, user.username);
+    const tokens = await this.issueSession(user.id, user.username);
     return { user: userWithoutHash, ...tokens };
   }
 
   async refresh(cookieToken: string) {
-    const record = await this.prisma.refreshToken.findUnique({
-      where: { tokenHash: this.hashToken(cookieToken) },
-      include: { user: { omit: { passwordHash: true } } },
-    });
-
-    if (!record || record.expiresAt < new Date()) {
-      throw new UnauthorizedException('Refresh token expired or not found');
-    }
-
-    await this.prisma.refreshToken.delete({ where: { id: record.id } });
-
-    const tokens = await this.generateTokens(
-      record.userId,
-      record.user.username,
-    );
-    return { user: record.user, ...tokens };
+    const { user, userId } = await this.refreshTokens.consume(cookieToken);
+    const tokens = await this.issueSession(userId, user.username);
+    return { user, ...tokens };
   }
 
   async logout(userId: string) {
-    await this.prisma.refreshToken.deleteMany({ where: { userId } });
+    await this.refreshTokens.revokeAll(userId);
   }
 
   async getMe(userId: string) {
@@ -91,28 +77,11 @@ export class AuthService {
     });
   }
 
-  private async generateTokens(userId: string, username: string) {
+  // Шов между аутентификацией и хранением сессии: подпись JWT — задача
+  // AuthService, выпуск refresh-токена делегирован RefreshTokenService.
+  private async issueSession(userId: string, username: string) {
     const accessToken = this.jwt.sign({ sub: userId, username });
-
-    const rawToken = randomBytes(40).toString('hex');
-    const tokenHash = this.hashToken(rawToken);
-
-    const days = Number(this.config.get<number>('REFRESH_TOKEN_TTL_DAYS', 30));
-    const expiresAt = new Date(); // Date.now - timestamp
-    expiresAt.setDate(expiresAt.getDate() + days);
-
-    await this.prisma.refreshToken.create({
-      data: { userId, tokenHash, expiresAt },
-    });
-
-    return {
-      accessToken,
-      refreshToken: rawToken,
-      refreshTokenExpiresAt: expiresAt,
-    };
-  }
-
-  private hashToken(raw: string): string {
-    return createHash('sha256').update(raw).digest('hex');
+    const refresh = await this.refreshTokens.issue(userId);
+    return { accessToken, ...refresh };
   }
 }
