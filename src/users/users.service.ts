@@ -24,6 +24,8 @@ export class UsersService {
   }
 
   async update(id: string, userId: string, dto: UpdateUserDto) {
+    await this.findOne(id);
+
     if (id !== userId) {
       throw new ForbiddenException('Users do not match');
     }
@@ -67,6 +69,7 @@ export class UsersService {
           cursor: cursor ? { id: cursor } : undefined,
         },
       },
+      omit: { passwordHash: true },
     });
 
     if (!user) {
