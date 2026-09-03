@@ -70,10 +70,10 @@ export class AlbumsService {
   }
 
   async update(id: string, userId: string, dto: UpdateAlbumDto) {
-    const album = await this.findOwned(id, userId);
+    await this.findOwned(id, userId);
 
     if (dto.title === undefined) {
-      return album;
+      throw new BadRequestException('No fields provided for update');
     }
 
     try {
