@@ -89,10 +89,10 @@ export class PhotosService {
   }
 
   async update(id: string, userId: string, dto: UpdatePhotoDto) {
-    const photo = await this.findOwned(id, userId);
+    await this.findOwned(id, userId);
 
     if (dto.caption === undefined) {
-      return photo;
+      throw new BadRequestException('No fields provided for update');
     }
 
     try {
