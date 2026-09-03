@@ -1,8 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'node:crypto';
-import { Prisma } from '../generated/prisma/client';
+import { Prisma, User } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { isNotFoundError } from '../common/prisma-errors';
 
 @Injectable()
 export class RefreshTokenService {
@@ -11,15 +12,15 @@ export class RefreshTokenService {
     private config: ConfigService,
   ) {}
 
-  // Параметр tx со значением по умолчанию — задел под prisma.$transaction:
-  // вызовы пока передают дефолт (this.prisma), но точка расширения уже есть.
   async issue(
     userId: string,
     tx: Prisma.TransactionClient = this.prisma,
   ): Promise<{ refreshToken: string; refreshTokenExpiresAt: Date }> {
     const rawToken = randomBytes(40).toString('hex');
 
-    const days = Number(this.config.get<number>('REFRESH_TOKEN_TTL_DAYS', 30));
+    const days = Number(
+      this.config.get<string>('REFRESH_TOKEN_TTL_DAYS', '30'),
+    );
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
@@ -30,19 +31,25 @@ export class RefreshTokenService {
     return { refreshToken: rawToken, refreshTokenExpiresAt: expiresAt };
   }
 
-  // Находит запись по хешу, проверяет срок, удаляет её (ротация) и
-  // возвращает вместе с user без passwordHash.
-  async consume(rawToken: string, tx: Prisma.TransactionClient = this.prisma) {
-    const record = await tx.refreshToken.findUnique({
-      where: { tokenHash: this.hashToken(rawToken) },
-      include: { user: { omit: { passwordHash: true } } },
-    });
+  async consume(
+    rawToken: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<{ user: Omit<User, 'passwordHash'>; userId: string }> {
+    const record = await tx.refreshToken
+      .delete({
+        where: { tokenHash: this.hashToken(rawToken) },
+        include: { user: { omit: { passwordHash: true } } },
+      })
+      .catch((error: unknown) => {
+        if (isNotFoundError(error)) {
+          throw new UnauthorizedException('Refresh token expired or not found');
+        }
+        throw error;
+      });
 
-    if (!record || record.expiresAt < new Date()) {
+    if (record.expiresAt < new Date()) {
       throw new UnauthorizedException('Refresh token expired or not found');
     }
-
-    await tx.refreshToken.delete({ where: { id: record.id } });
 
     return { user: record.user, userId: record.userId };
   }
