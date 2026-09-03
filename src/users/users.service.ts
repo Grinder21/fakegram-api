@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Prisma } from '../generated/prisma/client';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { throwIfMissing } from '../common/prisma-errors';
 
 @Injectable()
 export class UsersService {
@@ -51,7 +51,7 @@ export class UsersService {
         omit: { passwordHash: true },
       });
     } catch (error) {
-      this.throwIfMissing(error, 'User not found');
+      throwIfMissing(error, 'User not found');
     }
   }
 
@@ -96,15 +96,5 @@ export class UsersService {
       hasMore,
       nextCursor: hasMore ? items[items.length - 1].id : null,
     };
-  }
-
-  private throwIfMissing(error: unknown, message: string): never {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2025'
-    ) {
-      throw new NotFoundException(message);
-    }
-    throw error;
   }
 }
