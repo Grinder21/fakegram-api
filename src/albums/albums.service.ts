@@ -7,8 +7,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
-import { Prisma } from '../generated/prisma/client';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { throwIfMissing } from '../common/prisma-errors';
 
 @Injectable()
 export class AlbumsService {
@@ -82,7 +82,7 @@ export class AlbumsService {
         data: { title: dto.title },
       });
     } catch (error) {
-      this.throwIfMissing(error, 'Album not found');
+      throwIfMissing(error, 'Album not found');
     }
   }
 
@@ -92,7 +92,7 @@ export class AlbumsService {
     try {
       await this.prisma.album.delete({ where: { id } });
     } catch (error) {
-      this.throwIfMissing(error, 'Album not found');
+      throwIfMissing(error, 'Album not found');
     }
   }
 
@@ -102,15 +102,5 @@ export class AlbumsService {
       throw new ForbiddenException('You are not the owner of this album');
     }
     return album;
-  }
-
-  private throwIfMissing(error: unknown, message: string): never {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2025'
-    ) {
-      throw new NotFoundException(message);
-    }
-    throw error;
   }
 }
