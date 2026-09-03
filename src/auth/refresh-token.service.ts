@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'node:crypto';
-import type { Prisma, User } from '../generated/prisma/client';
+import type { User } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { isNotFoundError } from '../common/prisma-errors';
 
@@ -18,11 +18,8 @@ export class RefreshTokenService {
     private config: ConfigService,
   ) {}
 
-  // Параметр tx со значением по умолчанию — задел под prisma.$transaction:
-  // вызовы пока передают дефолт (this.prisma), но точка расширения уже есть.
   async issue(
     userId: string,
-    tx: Prisma.TransactionClient = this.prisma,
   ): Promise<{ refreshToken: string; refreshTokenExpiresAt: Date }> {
     const rawToken = randomBytes(40).toString('hex');
 
@@ -32,7 +29,7 @@ export class RefreshTokenService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + days);
 
-    await tx.refreshToken.create({
+    await this.prisma.refreshToken.create({
       data: { userId, tokenHash: this.hashToken(rawToken), expiresAt },
     });
 
@@ -45,9 +42,8 @@ export class RefreshTokenService {
   // findUnique + delete оставляла бы окно, в котором обе вкладки выпустят по сессии.
   async consume(
     rawToken: string,
-    tx: Prisma.TransactionClient = this.prisma,
   ): Promise<{ user: PublicUser; userId: string }> {
-    const record = await tx.refreshToken
+    const record = await this.prisma.refreshToken
       .delete({
         where: { tokenHash: this.hashToken(rawToken) },
         include: { user: { omit: { passwordHash: true } } },
@@ -66,11 +62,8 @@ export class RefreshTokenService {
     return { user: record.user, userId: record.userId };
   }
 
-  async revokeAll(
-    userId: string,
-    tx: Prisma.TransactionClient = this.prisma,
-  ): Promise<void> {
-    await tx.refreshToken.deleteMany({ where: { userId } });
+  async revokeAll(userId: string): Promise<void> {
+    await this.prisma.refreshToken.deleteMany({ where: { userId } });
   }
 
   private hashToken(raw: string): string {
