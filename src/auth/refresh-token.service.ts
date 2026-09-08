@@ -20,8 +20,7 @@ export class RefreshTokenService {
     const days = Number(
       this.config.get<string>('REFRESH_TOKEN_TTL_DAYS', '30'),
     );
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + days);
+    const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
     await this.prisma.refreshToken.create({
       data: { userId, tokenHash: this.hashToken(rawToken), expiresAt },

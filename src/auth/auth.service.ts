@@ -77,11 +77,13 @@ export class AuthService {
     });
   }
 
-  // Шов между аутентификацией и хранением сессии: подпись JWT — задача
-  // AuthService, выпуск refresh-токена делегирован RefreshTokenService.
   private async issueSession(userId: string, username: string) {
     const accessToken = this.jwt.sign({ sub: userId, username });
     const refresh = await this.refreshTokens.issue(userId);
-    return { accessToken, ...refresh };
+    return {
+      accessToken,
+      refreshToken: refresh.refreshToken,
+      refreshTokenExpiresAt: refresh.refreshTokenExpiresAt,
+    };
   }
 }
