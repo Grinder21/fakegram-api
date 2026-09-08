@@ -9,6 +9,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RefreshTokenService } from './refresh-token.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { isUniqueConstraintError } from '../common/prisma-errors';
+import { Prisma } from '../generated/prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -19,26 +21,29 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findFirst({
-      where: { OR: [{ email: dto.email }, { username: dto.username }] },
-    });
-    if (existing) {
-      throw new ConflictException('Email or username already taken');
-    }
-
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        username: dto.username,
-        passwordHash,
-        displayName: dto.displayName,
-      },
-      omit: { passwordHash: true },
-    });
 
-    const tokens = await this.issueSession(user.id, user.username);
-    return { user, ...tokens };
+    return await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user
+        .create({
+          data: {
+            email: dto.email,
+            username: dto.username,
+            passwordHash,
+            displayName: dto.displayName,
+          },
+          omit: { passwordHash: true },
+        })
+        .catch((error: unknown) => {
+          if (isUniqueConstraintError(error)) {
+            throw new ConflictException('Email or username already taken');
+          }
+          throw error;
+        });
+
+      const tokens = await this.issueSession(user.id, user.username, tx);
+      return { user, ...tokens };
+    });
   }
 
   async login(dto: LoginDto) {
@@ -77,9 +82,13 @@ export class AuthService {
     });
   }
 
-  private async issueSession(userId: string, username: string) {
+  private async issueSession(
+    userId: string,
+    username: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ) {
     const accessToken = this.jwt.sign({ sub: userId, username });
-    const refresh = await this.refreshTokens.issue(userId);
+    const refresh = await this.refreshTokens.issue(userId, tx);
     return {
       accessToken,
       refreshToken: refresh.refreshToken,
