@@ -42,6 +42,7 @@ cp .env.example .env
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=fakegram
+PORT=3000
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fakegram
 NODE_ENV=development
 CLIENT_ORIGIN=http://localhost:3000
