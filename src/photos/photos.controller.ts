@@ -46,7 +46,7 @@ export class PhotosController {
   // 200 - OK, 400 - bad request,
   // 401 - unauthorized, 404 - not found
   @Get(':id/comments')
-  checkComments(
+  getPhotoComments(
     @Param('id', ParseUUIDPipe) id: string,
     @Query() pagination: PaginationDto,
   ) {
