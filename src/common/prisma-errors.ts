@@ -14,3 +14,10 @@ export function isNotFoundError(error: unknown): boolean {
     error.code === 'P2025'
   );
 }
+
+export function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  );
+}

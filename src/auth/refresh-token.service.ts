@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'node:crypto';
-import { User } from '../generated/prisma/client';
+import { Prisma, User } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { isNotFoundError } from '../common/prisma-errors';
 
@@ -14,6 +14,7 @@ export class RefreshTokenService {
 
   async issue(
     userId: string,
+    tx: Prisma.TransactionClient = this.prisma,
   ): Promise<{ refreshToken: string; refreshTokenExpiresAt: Date }> {
     const rawToken = randomBytes(40).toString('hex');
 
@@ -22,7 +23,7 @@ export class RefreshTokenService {
     );
     const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
-    await this.prisma.refreshToken.create({
+    await tx.refreshToken.create({
       data: { userId, tokenHash: this.hashToken(rawToken), expiresAt },
     });
 
