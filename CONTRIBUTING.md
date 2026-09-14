@@ -36,3 +36,4 @@ npm run start:dev             # запустить сервер
 | `COOKIE_SECRET`          | Секрет для подписи cookies        | случайная строка 32+ символа               |
 | `CLIENT_ORIGIN`          | Origin фронтенда (CORS)           | `http://localhost:3000`                    |
 | `NODE_ENV`               | Окружение                         | `development`                              |
+| `PORT`                   | Порт                              | `3000`                                     |
