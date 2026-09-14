@@ -16,7 +16,7 @@ model User {
   avatarUrl    String?  @map("avatar_url")
   bio          String?
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt      @map("updated_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   albums        Album[]
   comments      Comment[]
@@ -43,7 +43,7 @@ model Album {
   userId    String   @map("user_id") @db.Uuid
   title     String   @db.Citext
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt      @map("updated_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   photos Photo[]
@@ -59,7 +59,7 @@ model Photo {
   thumbnailUrl String?  @map("thumbnail_url")
   caption      String?
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt      @map("updated_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   album    Album     @relation(fields: [albumId], references: [id], onDelete: Cascade)
   comments Comment[]
@@ -74,9 +74,9 @@ model Comment {
   userId    String   @map("user_id") @db.Uuid
   body      String   @db.VarChar(2200)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([photoId])
   @@index([userId])
