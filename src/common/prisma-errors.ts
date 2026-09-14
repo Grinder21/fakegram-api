@@ -2,7 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 
 export function throwIfMissing(error: unknown, message: string): never {
-  if (isNotFoundError(error) || isUniqueConstraintError(error)) {
+  if (isNotFoundError(error)) {
     throw new NotFoundException(message);
   }
   throw error;
