@@ -9,7 +9,6 @@
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
     "target": "ES2023",
     "types": ["node"],
     "sourceMap": true,
