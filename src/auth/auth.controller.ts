@@ -19,6 +19,8 @@ import type { JwtPayload } from '../common/types/jwt-payload';
 
 @Controller('auth')
 export class AuthController {
+  private readonly REFRESH_COOKIE = 'refreshToken';
+
   constructor(private authService: AuthService) {}
 
   // POST /auth/register - public
@@ -33,11 +35,7 @@ export class AuthController {
     const { refreshToken, refreshTokenExpiresAt, ...result } =
       await this.authService.register(dto);
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      sameSite: 'strict',
-      expires: refreshTokenExpiresAt,
-    });
+    this.setRefreshCookie(res, refreshToken, refreshTokenExpiresAt);
 
     return result;
   }
@@ -55,11 +53,7 @@ export class AuthController {
     const { refreshToken, refreshTokenExpiresAt, ...result } =
       await this.authService.login(dto);
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      sameSite: 'strict',
-      expires: refreshTokenExpiresAt,
-    });
+    this.setRefreshCookie(res, refreshToken, refreshTokenExpiresAt);
 
     return result;
   }
@@ -74,7 +68,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const raw: unknown = req.cookies?.refreshToken;
+    const raw: unknown = req.cookies?.[this.REFRESH_COOKIE];
     const token = typeof raw === 'string' ? raw : undefined;
     if (!token) {
       throw new UnauthorizedException('No refresh token');
@@ -83,11 +77,7 @@ export class AuthController {
     const { refreshToken, refreshTokenExpiresAt, ...result } =
       await this.authService.refresh(token);
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      sameSite: 'strict',
-      expires: refreshTokenExpiresAt,
-    });
+    this.setRefreshCookie(res, refreshToken, refreshTokenExpiresAt);
 
     return result;
   }
@@ -103,7 +93,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     await this.authService.logout(user.sub);
-    res.clearCookie('refreshToken');
+    res.clearCookie(this.REFRESH_COOKIE);
   }
 
   // GET /auth/me - только с access-token
@@ -113,5 +103,13 @@ export class AuthController {
   @Get('me')
   async me(@CurrentUser() user: JwtPayload) {
     return this.authService.getMe(user.sub);
+  }
+
+  private setRefreshCookie(res: Response, token: string, expires: Date): void {
+    res.cookie(this.REFRESH_COOKIE, token, {
+      httpOnly: true,
+      sameSite: 'strict',
+      expires,
+    });
   }
 }
