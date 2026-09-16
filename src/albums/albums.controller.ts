@@ -46,7 +46,7 @@ export class AlbumsController {
   // 200 - OK, 400 - bad request,
   // 401 - unauthorized, 404 - not found
   @Get(':id/photos')
-  checkPhotos(
+  getAlbumPhotos(
     @Param('id', ParseUUIDPipe) id: string,
     @Query() pagination: PaginationDto,
   ) {
