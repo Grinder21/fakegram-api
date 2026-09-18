@@ -17,6 +17,7 @@ import { JwtGuard } from '../common/guards/jwt.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../common/types/jwt-payload';
 import { CurrentUserId } from '../common/decorators/current-user-id.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -28,6 +29,7 @@ export class AuthController {
   // body: {email, username, password, displayName? }
   // создать user, хэшировать пароль, отдать accessToken + поставить refresh в httpOnly cookie
   // 201 - OK, 400 - невалидное тело, 409 - email/username заняты
+  @Throttle({ default: { limit: 3, ttl: 60 * 60 * 1000 } })
   @Post('register')
   async register(
     @Body() dto: RegisterDto,
@@ -45,6 +47,7 @@ export class AuthController {
   // body: {email, password}
   // проверить пароль, отдать accessToken + поставить refresh cookie
   // 200 - OK, 400 - тело, 401 - неверные credentials
+  @Throttle({ default: { limit: 5, ttl: 60 * 1000 } })
   @Post('login')
   @HttpCode(200)
   async login(
@@ -63,6 +66,7 @@ export class AuthController {
   // refresh из cookie - получить новый accessToken
   // гасить старый refresh, выдать новый
   // 200 - OK, 401 - нет/невалидный refresh-token
+  @Throttle({ default: { limit: 10, ttl: 60 * 1000 } })
   @Post('refresh')
   @HttpCode(200)
   async refresh(
