@@ -16,6 +16,7 @@ import { AuthService } from './auth.service';
 import { JwtGuard } from '../common/guards/jwt.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../common/types/jwt-payload';
+import { CurrentUserId } from '../common/decorators/current-user-id.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -98,11 +99,11 @@ export class AuthController {
 
   // GET /auth/me - только с access-token
   // отдать текущего user (без password_hash)
-  // 200 - OK, 401 - нет/невалидный access-token
+  // 200 - OK, 400 - невалидный id в токене, 401 - нет/невалидный access-token
   @UseGuards(JwtGuard)
   @Get('me')
-  async me(@CurrentUser() user: JwtPayload) {
-    return this.authService.getMe(user.sub);
+  async me(@CurrentUserId() userId: string) {
+    return this.authService.getMe(userId);
   }
 
   private setRefreshCookie(res: Response, token: string, expires: Date): void {
