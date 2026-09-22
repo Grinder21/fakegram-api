@@ -20,15 +20,22 @@ export class AlbumsService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, viewerId: string) {
     const album = await this.prisma.album.findUnique({ where: { id } });
     if (!album) {
       throw new NotFoundException('Album not found');
     }
+    if (album.userId !== viewerId) {
+      throw new ForbiddenException('You are not the owner of this album');
+    }
     return album;
   }
 
-  async findPhotos(albumId: string, pagination: PaginationDto) {
+  async findPhotos(
+    albumId: string,
+    viewerId: string,
+    pagination: PaginationDto,
+  ) {
     const limit = pagination.limit;
     const cursor = pagination.cursor;
     const album = await this.prisma.album.findUnique({
@@ -47,6 +54,9 @@ export class AlbumsService {
       throw new NotFoundException('Album not found');
     }
 
+    if (album.userId !== viewerId) {
+      throw new ForbiddenException('You are not the owner of this album');
+    }
     if (cursor) {
       const cursorPhoto = await this.prisma.photo.findFirst({
         where: { id: cursor, albumId },
@@ -70,7 +80,7 @@ export class AlbumsService {
   }
 
   async update(id: string, userId: string, dto: UpdateAlbumDto) {
-    await this.findOwned(id, userId);
+    await this.findOne(id, userId);
 
     if (dto.title === undefined) {
       throw new BadRequestException('No fields provided for update');
@@ -87,20 +97,12 @@ export class AlbumsService {
   }
 
   async remove(id: string, userId: string) {
-    await this.findOwned(id, userId);
+    await this.findOne(id, userId);
 
     try {
       await this.prisma.album.delete({ where: { id } });
     } catch (error) {
       throwIfMissing(error, 'Album not found');
     }
-  }
-
-  private async findOwned(id: string, userId: string) {
-    const album = await this.findOne(id);
-    if (album.userId !== userId) {
-      throw new ForbiddenException('You are not the owner of this album');
-    }
-    return album;
   }
 }

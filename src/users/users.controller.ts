@@ -14,6 +14,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
 import type { JwtPayload } from '../common/types/jwt-payload';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { CurrentUserId } from '../common/decorators/current-user-id.decorator';
 
 @UseGuards(JwtGuard)
 @Controller('users')
@@ -43,12 +44,13 @@ export class UsersController {
   // GET /users/:id/albums — только с access-token
   // ?cursor&limit -> {items, hasMore, nextCursor}
   // 200 - OK, 400 - Bad Request, 401 - unauthorized,
-  // 404 - not found
+  // 403 - forbidden, 404 - not found
   @Get(':id/albums')
   findAlbums(
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() viewerId: string,
     @Query() pagination: PaginationDto,
   ) {
-    return this.usersService.findAlbums(id, pagination);
+    return this.usersService.findAlbums(id, viewerId, pagination);
   }
 }

@@ -18,6 +18,7 @@ import { JwtGuard } from '../common/guards/jwt.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../common/types/jwt-payload';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { CurrentUserId } from '../common/decorators/current-user-id.decorator';
 
 @UseGuards(JwtGuard)
 @Controller('albums')
@@ -35,22 +36,26 @@ export class AlbumsController {
   // GET /albums/:id - только access-token
   //  - -> {album}
   // 200 - OK, 400 - bad request, 401 - unauthorized,
-  // 404 - not found
+  // 403 - forbidden, 404 - not found
   @Get(':id')
-  getAlbum(@Param('id', ParseUUIDPipe) id: string) {
-    return this.albumsService.findOne(id);
+  getAlbum(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.albumsService.findOne(id, userId);
   }
 
   // GET /albums/:id/photos - только с access-token
   // - -> {items, hasMore, nextCursor}
   // 200 - OK, 400 - bad request,
-  // 401 - unauthorized, 404 - not found
+  // 401 - unauthorized, 403 - forbidden, 404 - not found
   @Get(':id/photos')
   getAlbumPhotos(
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
     @Query() pagination: PaginationDto,
   ) {
-    return this.albumsService.findPhotos(id, pagination);
+    return this.albumsService.findPhotos(id, userId, pagination);
   }
 
   // PATCH /albums/:id - только владелец
