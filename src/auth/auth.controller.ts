@@ -9,7 +9,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
@@ -18,12 +18,17 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../common/types/jwt-payload';
 import { CurrentUserId } from '../common/decorators/current-user-id.decorator';
 import { Throttle } from '@nestjs/throttler';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
   private readonly REFRESH_COOKIE = 'refreshToken';
+  private readonly PATH_COOKIE = '/auth/refresh';
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private config: ConfigService,
+  ) {}
 
   // POST /auth/register - public
   // body: {email, username, password, displayName? }
@@ -98,7 +103,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     await this.authService.logout(user.sub);
-    res.clearCookie(this.REFRESH_COOKIE);
+    res.clearCookie(this.REFRESH_COOKIE, this.refreshCookieOptions);
   }
 
   // GET /auth/me - только с access-token
@@ -110,10 +115,20 @@ export class AuthController {
     return this.authService.getMe(userId);
   }
 
-  private setRefreshCookie(res: Response, token: string, expires: Date): void {
-    res.cookie(this.REFRESH_COOKIE, token, {
+  private get refreshCookieOptions(): CookieOptions {
+    return {
       httpOnly: true,
       sameSite: 'strict',
+      path: this.PATH_COOKIE,
+      secure:
+        this.config.get<string>('NODE_ENV') === 'production' ||
+        this.config.get<string>('COOKIE_SECURE') === 'true',
+    };
+  }
+
+  private setRefreshCookie(res: Response, token: string, expires: Date): void {
+    res.cookie(this.REFRESH_COOKIE, token, {
+      ...this.refreshCookieOptions,
       expires,
     });
   }
