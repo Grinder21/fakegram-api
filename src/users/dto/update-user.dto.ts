@@ -34,7 +34,11 @@ export class UpdateUserDto {
     typeof value === 'string' ? value.trim() : value,
   )
   @ValidateIf((_, value) => value !== null)
-  @IsUrl({}, { message: 'Invalid URL format' })
+  @IsUrl(
+    { protocols: ['http', 'https'], require_protocol: true },
+    { message: 'Invalid URL format' },
+  )
   @IsNotEmpty()
+  @MaxLength(2048)
   avatarUrl?: string | null;
 }
