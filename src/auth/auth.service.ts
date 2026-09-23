@@ -66,12 +66,17 @@ export class AuthService {
   }
 
   async refresh(cookieToken: string) {
-    const { user, userId, familyId } =
-      await this.refreshTokens.consume(cookieToken);
-    const tokens = await this.issueSession(userId, user.username, {
-      familyId,
+    return this.prisma.$transaction(async (tx) => {
+      const { user, userId, familyId } = await this.refreshTokens.consume(
+        cookieToken,
+        tx,
+      );
+      const tokens = await this.issueSession(userId, user.username, {
+        tx,
+        familyId,
+      });
+      return { user, ...tokens };
     });
-    return { user, ...tokens };
   }
 
   async logout(userId: string) {

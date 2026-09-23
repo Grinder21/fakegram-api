@@ -38,14 +38,17 @@ export class RefreshTokenService {
     return { refreshToken: rawToken, refreshTokenExpiresAt: expiresAt };
   }
 
-  async consume(rawToken: string): Promise<{
+  async consume(
+    rawToken: string,
+    tx: Prisma.TransactionClient = this.prisma,
+  ): Promise<{
     user: Omit<User, 'passwordHash'>;
     userId: string;
     familyId: string;
   }> {
     const tokenHash = this.hashToken(rawToken);
 
-    const record = await this.prisma.refreshToken
+    const record = await tx.refreshToken
       .update({
         where: { tokenHash, used: false, expiresAt: { gt: new Date() } },
         data: { used: true },
@@ -53,7 +56,7 @@ export class RefreshTokenService {
       })
       .catch(async (error: unknown) => {
         if (isNotFoundError(error)) {
-          await this.revokeFamilyOnReuse(tokenHash);
+          await this.revokeFamilyOfRejectedToken(tokenHash);
           throw new UnauthorizedException('Refresh token expired or not found');
         }
         throw error;
@@ -70,23 +73,37 @@ export class RefreshTokenService {
     await this.prisma.refreshToken.deleteMany({ where: { userId } });
   }
 
-  private async revokeFamilyOnReuse(tokenHash: string): Promise<void> {
-    const record = await this.prisma.refreshToken.findUnique({
-      where: { tokenHash },
-      select: { userId: true, familyId: true, used: true },
-    });
+  private async revokeFamilyOfRejectedToken(tokenHash: string): Promise<void> {
+    try {
+      const record = await this.prisma.refreshToken.findUnique({
+        where: { tokenHash },
+        select: { userId: true, familyId: true, used: true, expiresAt: true },
+      });
 
-    if (!record?.used) {
-      return;
+      if (!record) {
+        return;
+      }
+
+      const expired = record.expiresAt <= new Date();
+      if (!record.used && !expired) {
+        return;
+      }
+
+      if (record.used) {
+        this.logger.warn(
+          `Refresh token reuse detected (user ${record.userId}, family ${record.familyId}). Revoking the whole family.`,
+        );
+      }
+
+      await this.prisma.refreshToken.deleteMany({
+        where: { familyId: record.familyId },
+      });
+    } catch (error: unknown) {
+      this.logger.error(
+        'Failed to revoke refresh token family',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
-
-    this.logger.warn(
-      `Refresh token reuse detected (user ${record.userId}, family ${record.familyId}). Revoking the whole family.`,
-    );
-
-    await this.prisma.refreshToken.deleteMany({
-      where: { familyId: record.familyId },
-    });
   }
 
   private hashToken(raw: string): string {
