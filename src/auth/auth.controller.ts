@@ -23,7 +23,7 @@ import { ConfigService } from '@nestjs/config';
 @Controller('auth')
 export class AuthController {
   private readonly REFRESH_COOKIE = 'refreshToken';
-  private readonly PATH_COOKIE = '/auth/refresh';
+  private readonly REFRESH_COOKIE_PATH = '/auth/refresh';
 
   constructor(
     private authService: AuthService,
@@ -119,7 +119,7 @@ export class AuthController {
     return {
       httpOnly: true,
       sameSite: 'strict',
-      path: this.PATH_COOKIE,
+      path: this.REFRESH_COOKIE_PATH,
       secure:
         this.config.get<string>('NODE_ENV') === 'production' ||
         this.config.get<string>('COOKIE_SECURE') === 'true',
