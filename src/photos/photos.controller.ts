@@ -18,6 +18,7 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 import { PhotosService } from './photos.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
+import { CurrentUserId } from '../common/decorators/current-user-id.decorator';
 
 @UseGuards(JwtGuard)
 @Controller('photos')
@@ -35,22 +36,26 @@ export class PhotosController {
   // GET /photos/:id - только access-token
   //  - -> {photo}
   // 200 - OK, 400 - bad request, 401 - unauthorized,
-  // 404 - not found
+  // 403 - forbidden, 404 - not found
   @Get(':id')
-  getPhoto(@Param('id', ParseUUIDPipe) id: string) {
-    return this.photosService.findOne(id);
+  getPhoto(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.photosService.findOne(id, userId);
   }
 
   // GET /photos/:id/comments - только с access-token
   // ?cursor&limit -> {items, hasMore, nextCursor}
   // 200 - OK, 400 - bad request,
-  // 401 - unauthorized, 404 - not found
+  // 401 - unauthorized, 403 - forbidden, 404 - not found
   @Get(':id/comments')
   getPhotoComments(
     @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
     @Query() pagination: PaginationDto,
   ) {
-    return this.photosService.findComments(id, pagination);
+    return this.photosService.findComments(id, userId, pagination);
   }
 
   // PATCH /photos/:id - только владелец

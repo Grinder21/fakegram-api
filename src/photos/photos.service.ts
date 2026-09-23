@@ -38,33 +38,33 @@ export class PhotosService {
     });
   }
 
-  async findOne(id: string) {
-    const photo = await this.prisma.photo.findUnique({ where: { id } });
-    if (!photo) {
-      throw new NotFoundException('Photo not found');
-    }
-    return photo;
-  }
-
-  async findComments(photoId: string, pagination: PaginationDto) {
-    const limit = pagination.limit;
-    const cursor = pagination.cursor;
-
+  async findOne(id: string, viewerId: string) {
     const photo = await this.prisma.photo.findUnique({
-      where: { id: photoId },
-      include: {
-        comments: {
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          take: limit + 1,
-          skip: cursor ? 1 : 0,
-          cursor: cursor ? { id: cursor } : undefined,
-        },
-      },
+      where: { id },
+      include: { album: { select: { userId: true } } },
     });
 
     if (!photo) {
       throw new NotFoundException('Photo not found');
     }
+
+    if (photo.album.userId !== viewerId) {
+      throw new ForbiddenException('You are not the owner of this photo');
+    }
+
+    const { album: _album, ...rest } = photo;
+    return rest;
+  }
+
+  async findComments(
+    photoId: string,
+    viewerId: string,
+    pagination: PaginationDto,
+  ) {
+    await this.findOne(photoId, viewerId);
+
+    const limit = pagination.limit;
+    const cursor = pagination.cursor;
 
     if (cursor) {
       const cursorComment = await this.prisma.comment.findFirst({
@@ -77,7 +77,14 @@ export class PhotosService {
       }
     }
 
-    const comments = photo.comments;
+    const comments = await this.prisma.comment.findMany({
+      where: { photoId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+    });
+
     const hasMore = comments.length > limit;
     const items = hasMore ? comments.slice(0, limit) : comments;
 
@@ -89,7 +96,7 @@ export class PhotosService {
   }
 
   async update(id: string, userId: string, dto: UpdatePhotoDto) {
-    await this.findOwned(id, userId);
+    await this.findOne(id, userId);
 
     if (dto.caption === undefined) {
       throw new BadRequestException('No fields provided for update');
@@ -106,30 +113,12 @@ export class PhotosService {
   }
 
   async remove(id: string, userId: string) {
-    await this.findOwned(id, userId);
+    await this.findOne(id, userId);
 
     try {
       await this.prisma.photo.delete({ where: { id } });
     } catch (error) {
       throwIfMissing(error, 'Photo not found');
     }
-  }
-
-  private async findOwned(id: string, userId: string) {
-    const photo = await this.prisma.photo.findUnique({
-      where: { id },
-      include: { album: { select: { userId: true } } },
-    });
-
-    if (!photo) {
-      throw new NotFoundException('Photo not found');
-    }
-
-    if (photo.album.userId !== userId) {
-      throw new ForbiddenException('You are not the owner of this photo');
-    }
-
-    const { album: _album, ...rest } = photo;
-    return rest;
   }
 }

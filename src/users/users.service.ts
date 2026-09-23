@@ -55,7 +55,15 @@ export class UsersService {
     }
   }
 
-  async findAlbums(userId: string, pagination: PaginationDto) {
+  async findAlbums(
+    userId: string,
+    viewerId: string,
+    pagination: PaginationDto,
+  ) {
+    if (userId !== viewerId) {
+      throw new ForbiddenException('Users do not match');
+    }
+
     const limit = pagination.limit;
     const cursor = pagination.cursor;
 
