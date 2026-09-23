@@ -33,7 +33,7 @@ npm run start:dev             # запустить сервер
 | `JWT_ACCESS_SECRET`      | Секрет для подписи access-токенов | случайная строка 32+ символа               |
 | `ACCESS_TOKEN_TTL`       | Срок жизни access-токена          | `15m`                                      |
 | `REFRESH_TOKEN_TTL_DAYS` | Срок жизни refresh-токена в днях  | `30`                                       |
-| `COOKIE_SECRET`          | Секрет для подписи cookies        | случайная строка 32+ символа               |
+| `COOKIE_SECURE`          | Форсировать Secure у cookie       | `false`                                    |
 | `CLIENT_ORIGIN`          | Origin фронтенда (CORS)           | `http://localhost:3000`                    |
 | `NODE_ENV`               | Окружение                         | `development`                              |
 | `PORT`                   | Порт                              | `3000`                                     |
