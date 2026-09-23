@@ -61,29 +61,10 @@ export class PhotosService {
     viewerId: string,
     pagination: PaginationDto,
   ) {
+    await this.findOne(photoId, viewerId);
+
     const limit = pagination.limit;
     const cursor = pagination.cursor;
-
-    const photo = await this.prisma.photo.findUnique({
-      where: { id: photoId },
-      include: {
-        comments: {
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          take: limit + 1,
-          skip: cursor ? 1 : 0,
-          cursor: cursor ? { id: cursor } : undefined,
-        },
-        album: { select: { userId: true } },
-      },
-    });
-
-    if (!photo) {
-      throw new NotFoundException('Photo not found');
-    }
-
-    if (photo.album.userId !== viewerId) {
-      throw new ForbiddenException('You are not the owner of this photo');
-    }
 
     if (cursor) {
       const cursorComment = await this.prisma.comment.findFirst({
@@ -96,7 +77,14 @@ export class PhotosService {
       }
     }
 
-    const comments = photo.comments;
+    const comments = await this.prisma.comment.findMany({
+      where: { photoId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+    });
+
     const hasMore = comments.length > limit;
     const items = hasMore ? comments.slice(0, limit) : comments;
 

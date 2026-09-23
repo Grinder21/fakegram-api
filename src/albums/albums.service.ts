@@ -36,27 +36,11 @@ export class AlbumsService {
     viewerId: string,
     pagination: PaginationDto,
   ) {
+    await this.findOne(albumId, viewerId);
+
     const limit = pagination.limit;
     const cursor = pagination.cursor;
-    const album = await this.prisma.album.findUnique({
-      where: { id: albumId },
-      include: {
-        photos: {
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          take: limit + 1,
-          skip: cursor ? 1 : 0,
-          cursor: cursor ? { id: cursor } : undefined,
-        },
-      },
-    });
 
-    if (!album) {
-      throw new NotFoundException('Album not found');
-    }
-
-    if (album.userId !== viewerId) {
-      throw new ForbiddenException('You are not the owner of this album');
-    }
     if (cursor) {
       const cursorPhoto = await this.prisma.photo.findFirst({
         where: { id: cursor, albumId },
@@ -68,7 +52,14 @@ export class AlbumsService {
       }
     }
 
-    const photos = album.photos;
+    const photos = await this.prisma.photo.findMany({
+      where: { albumId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+    });
+
     const hasMore = photos.length > limit;
     const items = hasMore ? photos.slice(0, limit) : photos;
 
