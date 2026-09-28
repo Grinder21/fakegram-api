@@ -19,7 +19,7 @@ export class RegisterDto {
 
   @IsString()
   @MinLength(8)
-  @IsByteLength(0, 72, { message: 'Password must be at most 72 bytes long' })
+  @IsByteLength(0, 72, { message: 'Password is too long' })
   @Matches(/^(?=.*\p{Ll})(?=.*\p{Lu})(?=.*\d)/u, {
     message:
       'Password must contain at least one lowercase letter, one uppercase letter and one digit',
