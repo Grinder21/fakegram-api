@@ -1,7 +1,9 @@
 import {
+  IsByteLength,
   IsEmail,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -17,7 +19,11 @@ export class RegisterDto {
 
   @IsString()
   @MinLength(8)
-  @MaxLength(256)
+  @IsByteLength(0, 72, { message: 'Password is too long' })
+  @Matches(/^(?=.*\p{Ll})(?=.*\p{Lu})(?=.*\d)/u, {
+    message:
+      'Password must contain at least one lowercase letter, one uppercase letter and one digit',
+  })
   password!: string;
 
   @IsOptional()
