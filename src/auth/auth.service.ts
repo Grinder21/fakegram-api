@@ -41,7 +41,7 @@ export class AuthService {
           throw error;
         });
 
-      const tokens = await this.issueSession(user.id, user.username, tx);
+      const tokens = await this.issueSession(user.id, user.username, { tx });
       return { user, ...tokens };
     });
   }
@@ -66,9 +66,17 @@ export class AuthService {
   }
 
   async refresh(cookieToken: string) {
-    const { user, userId } = await this.refreshTokens.consume(cookieToken);
-    const tokens = await this.issueSession(userId, user.username);
-    return { user, ...tokens };
+    return this.prisma.$transaction(async (tx) => {
+      const { user, userId, familyId } = await this.refreshTokens.consume(
+        cookieToken,
+        tx,
+      );
+      const tokens = await this.issueSession(userId, user.username, {
+        tx,
+        familyId,
+      });
+      return { user, ...tokens };
+    });
   }
 
   async logout(userId: string) {
@@ -85,10 +93,13 @@ export class AuthService {
   private async issueSession(
     userId: string,
     username: string,
-    tx: Prisma.TransactionClient = this.prisma,
+    {
+      tx = this.prisma,
+      familyId,
+    }: { tx?: Prisma.TransactionClient; familyId?: string } = {},
   ) {
     const accessToken = this.jwt.sign({ sub: userId, username });
-    const refresh = await this.refreshTokens.issue(userId, tx);
+    const refresh = await this.refreshTokens.issue(userId, tx, familyId);
     return {
       accessToken,
       refreshToken: refresh.refreshToken,
