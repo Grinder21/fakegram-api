@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -14,6 +15,8 @@ import { Prisma } from '../generated/prisma/client';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
@@ -36,7 +39,16 @@ export class AuthService {
         })
         .catch((error: unknown) => {
           if (isUniqueConstraintError(error)) {
-            throw new ConflictException('Email or username already taken');
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+              this.logger.warn(
+                `Registration failed. Duplicate fields: ${JSON.stringify(error.meta)}`,
+              );
+            } else {
+              this.logger.warn(
+                'Registration failed due to unique constraint conflict',
+              );
+            }
+            throw new ConflictException('Registration failed');
           }
           throw error;
         });
