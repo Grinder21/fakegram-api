@@ -13,7 +13,7 @@ model User {
   email        String   @unique @db.Citext
   passwordHash String   @map("password_hash")
   displayName  String?  @map("display_name")
-  avatarUrl    String?  @map("avatar_url")
+  avatarUrl    String?  @map("avatar_url") @db.VarChar(2048)
   bio          String?
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -58,8 +58,8 @@ model Album {
 model Photo {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   albumId      String   @map("album_id") @db.Uuid
-  url          String
-  thumbnailUrl String?  @map("thumbnail_url")
+  url          String   @db.VarChar(2048)
+  thumbnailUrl String?  @map("thumbnail_url") @db.VarChar(2048)
   caption      String?
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)

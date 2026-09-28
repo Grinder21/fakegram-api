@@ -7,15 +7,22 @@ import {
 } from 'class-validator';
 
 export class CreatePhotoDto {
-  @IsUrl({}, { message: 'Неверный формат URL' })
+  @IsUrl(
+    { protocols: ['http', 'https'], require_protocol: true },
+    { message: 'Неверный формат URL' },
+  )
+  @MaxLength(2048)
   url!: string;
 
   @IsUUID()
   albumId!: string;
 
   @IsOptional()
-  @MaxLength(300)
-  @IsUrl({}, { message: 'Неверный формат URL' })
+  @MaxLength(2048)
+  @IsUrl(
+    { protocols: ['http', 'https'], require_protocol: true },
+    { message: 'Неверный формат URL' },
+  )
   thumbnailUrl?: string;
 
   @IsOptional()
