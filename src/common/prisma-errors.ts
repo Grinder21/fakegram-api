@@ -15,7 +15,9 @@ export function isNotFoundError(error: unknown): boolean {
   );
 }
 
-export function isUniqueConstraintError(error: unknown): boolean {
+export function isUniqueConstraintError(
+  error: unknown,
+): error is Prisma.PrismaClientKnownRequestError {
   return (
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === 'P2002'

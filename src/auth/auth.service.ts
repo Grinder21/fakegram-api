@@ -39,15 +39,9 @@ export class AuthService {
         })
         .catch((error: unknown) => {
           if (isUniqueConstraintError(error)) {
-            if (error instanceof Prisma.PrismaClientKnownRequestError) {
-              this.logger.warn(
-                `Registration failed. Duplicate fields: ${JSON.stringify(error.meta)}`,
-              );
-            } else {
-              this.logger.warn(
-                'Registration failed due to unique constraint conflict',
-              );
-            }
+            this.logger.warn(
+              `Registration failed. Duplicate fields: ${JSON.stringify(error.meta)}`,
+            );
             throw new ConflictException('Registration failed');
           }
           throw error;
