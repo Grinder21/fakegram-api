@@ -8,6 +8,12 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.use(
+    helmet({
+      xFrameOptions: { action: 'deny' },
+    }),
+  );
+
   app.use(cookieParser());
 
   app.useGlobalPipes(
@@ -15,12 +21,6 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-    }),
-  );
-
-  app.use(
-    helmet({
-      xFrameOptions: { action: 'deny' },
     }),
   );
 
