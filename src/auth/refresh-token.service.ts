@@ -21,9 +21,7 @@ export class RefreshTokenService {
   ): Promise<{ refreshToken: string; refreshTokenExpiresAt: Date }> {
     const rawToken = randomBytes(40).toString('hex');
 
-    const days = Number(
-      this.config.get<string>('REFRESH_TOKEN_TTL_DAYS', '30'),
-    );
+    const days = this.config.getOrThrow<number>('REFRESH_TOKEN_TTL_DAYS');
     const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 
     await tx.refreshToken.create({

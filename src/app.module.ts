@@ -8,11 +8,12 @@ import { ConfigModule } from '@nestjs/config';
 import { GuardsModule } from './common/guards/guards.module';
 import { HealthModule } from './health/health.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { validate } from './common/env.validation';
 import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate }),
     GuardsModule,
     AuthModule,
     UsersModule,
