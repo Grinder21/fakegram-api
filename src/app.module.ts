@@ -5,6 +5,7 @@ import { AlbumsModule } from './albums/albums.module';
 import { PhotosModule } from './photos/photos.module';
 import { CommentsModule } from './comments/comments.module';
 import { ConfigModule } from '@nestjs/config';
+import { validate } from './common/env.validation';
 import { GuardsModule } from './common/guards/guards.module';
 import { HealthModule } from './health/health.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -13,7 +14,7 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter'
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate }),
     GuardsModule,
     AuthModule,
     UsersModule,
