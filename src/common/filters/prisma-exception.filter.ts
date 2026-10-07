@@ -23,7 +23,7 @@ export class PrismaExceptionFilter extends BaseExceptionFilter {
 
     if (!mapped) {
       this.logger.error(
-        `Unhandled Prisma error ${exception.code}`,
+        `Unhandled Prisma error ${exception.code} ${JSON.stringify(exception.meta)}`,
         exception.stack,
       );
       super.catch(new InternalServerErrorException(), host);
