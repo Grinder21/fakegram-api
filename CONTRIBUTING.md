@@ -6,9 +6,12 @@
 
 ### Требования
 
-- Node.js 20+
+- Node.js 24.x LTS — точная версия в `.nvmrc` (`nvm use`)
 - Docker Desktop
 - Git
+
+Границы версий описаны в `engines` (`package.json`) и проверяются строго: в `.npmrc` включён
+`engine-strict=true`, поэтому `npm install` на Node 22 или 25 завершится ошибкой, а не предупреждением.
 
 ### Первый запуск
 

@@ -19,9 +19,12 @@
 
 ### Предварительные требования
 
-- [Node.js](https://nodejs.org/) 20+
+- [Node.js](https://nodejs.org/) 24.x LTS. Точная версия — в `.nvmrc`, так что `nvm use` подхватит её сам
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (для PostgreSQL)
 - npm
+
+> Диапазон допустимых версий Node и npm задан в `engines` (`package.json`), а `engine-strict=true`
+> в `.npmrc` заставляет `npm install` падать с внятной ошибкой на чужом мажоре вместо тихого warning.
 
 ### 1. Клонировать репозиторий
 
