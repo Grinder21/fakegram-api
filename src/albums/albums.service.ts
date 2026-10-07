@@ -36,8 +36,6 @@ export class AlbumsService {
     viewerId: string,
     pagination: PaginationDto,
   ) {
-    await this.findOne(albumId, viewerId);
-
     const limit = pagination.limit;
     const cursor = pagination.cursor;
 
@@ -48,17 +46,22 @@ export class AlbumsService {
       });
 
       if (!cursorPhoto) {
+        await this.findOne(albumId, viewerId);
         throw new BadRequestException('Cursor does not belong to this album');
       }
     }
 
     const photos = await this.prisma.photo.findMany({
-      where: { albumId },
+      where: { albumId, album: { userId: viewerId } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit + 1,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
     });
+
+    if (photos.length === 0) {
+      await this.findOne(albumId, viewerId);
+    }
 
     const hasMore = photos.length > limit;
     const items = hasMore ? photos.slice(0, limit) : photos;

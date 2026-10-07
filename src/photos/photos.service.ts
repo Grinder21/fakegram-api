@@ -61,8 +61,6 @@ export class PhotosService {
     viewerId: string,
     pagination: PaginationDto,
   ) {
-    await this.findOne(photoId, viewerId);
-
     const limit = pagination.limit;
     const cursor = pagination.cursor;
 
@@ -73,17 +71,22 @@ export class PhotosService {
       });
 
       if (!cursorComment) {
+        await this.findOne(photoId, viewerId);
         throw new BadRequestException('Cursor does not belong to this photo');
       }
     }
 
     const comments = await this.prisma.comment.findMany({
-      where: { photoId },
+      where: { photoId, photo: { album: { userId: viewerId } } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit + 1,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
     });
+
+    if (comments.length === 0) {
+      await this.findOne(photoId, viewerId);
+    }
 
     const hasMore = comments.length > limit;
     const items = hasMore ? comments.slice(0, limit) : comments;
