@@ -8,7 +8,9 @@ class EnvironmentVariables {
   REFRESH_TOKEN_TTL_DAYS!: number;
 }
 
-export function validate(config: Record<string, unknown>) {
+export function validate(
+  config: Record<string, unknown>,
+): EnvironmentVariables {
   const validatedConfig = plainToInstance(EnvironmentVariables, config);
   const errors = validateSync(validatedConfig, {
     skipMissingProperties: false,
