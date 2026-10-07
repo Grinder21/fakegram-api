@@ -8,6 +8,8 @@ import {
   MinLength,
 } from 'class-validator';
 
+import { IsNotCommonPassword } from '../validators/is-not-common-password.decorator';
+
 export class RegisterDto {
   @IsEmail()
   email!: string;
@@ -24,6 +26,7 @@ export class RegisterDto {
     message:
       'Password must contain at least one lowercase letter, one uppercase letter and one digit',
   })
+  @IsNotCommonPassword()
   password!: string;
 
   @IsOptional()
