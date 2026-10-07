@@ -12,6 +12,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { isUniqueConstraintError } from '../common/prisma-errors';
 import { Prisma } from '../generated/prisma/client';
+import { AuthResult, PublicUser, TokenPair } from './types/auth-result';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +24,7 @@ export class AuthService {
     private refreshTokens: RefreshTokenService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto): Promise<AuthResult> {
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     return await this.prisma.$transaction(async (tx) => {
@@ -52,7 +53,7 @@ export class AuthService {
     });
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto): Promise<AuthResult> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -71,7 +72,7 @@ export class AuthService {
     return { user: userWithoutHash, ...tokens };
   }
 
-  async refresh(cookieToken: string) {
+  async refresh(cookieToken: string): Promise<AuthResult> {
     return this.prisma.$transaction(async (tx) => {
       const { user, userId, familyId } = await this.refreshTokens.consume(
         cookieToken,
@@ -85,11 +86,11 @@ export class AuthService {
     });
   }
 
-  async logout(userId: string) {
+  async logout(userId: string): Promise<void> {
     await this.refreshTokens.revokeAll(userId);
   }
 
-  async getMe(userId: string) {
+  async getMe(userId: string): Promise<PublicUser> {
     return this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
       omit: { passwordHash: true },
@@ -103,7 +104,7 @@ export class AuthService {
       tx = this.prisma,
       familyId,
     }: { tx?: Prisma.TransactionClient; familyId?: string } = {},
-  ) {
+  ): Promise<TokenPair> {
     const accessToken = this.jwt.sign({ sub: userId, username });
     const refresh = await this.refreshTokens.issue(userId, tx, familyId);
     return {
