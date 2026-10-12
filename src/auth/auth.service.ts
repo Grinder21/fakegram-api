@@ -27,7 +27,7 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<AuthResult> {
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    return await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user
         .create({
           data: {
@@ -51,6 +51,9 @@ export class AuthService {
       const tokens = await this.issueSession(user.id, user.username, { tx });
       return { user, ...tokens };
     });
+
+    this.logger.log(`User registered (user ${result.user.id})`);
+    return result;
   }
 
   async login(dto: LoginDto): Promise<AuthResult> {
@@ -59,16 +62,19 @@ export class AuthService {
     });
 
     if (!user) {
+      this.logger.warn('Login failed: unknown email');
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const passwordMatch = await bcrypt.compare(dto.password, user.passwordHash);
     if (!passwordMatch) {
+      this.logger.warn(`Login failed: wrong password (user ${user.id})`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const { passwordHash: _, ...userWithoutHash } = user;
     const tokens = await this.issueSession(user.id, user.username);
+    this.logger.log(`User logged in (user ${user.id})`);
     return { user: userWithoutHash, ...tokens };
   }
 
@@ -88,6 +94,7 @@ export class AuthService {
 
   async logout(userId: string): Promise<void> {
     await this.refreshTokens.revokeAll(userId);
+    this.logger.log(`User logged out, refresh tokens revoked (user ${userId})`);
   }
 
   async getMe(userId: string): Promise<PublicUser> {

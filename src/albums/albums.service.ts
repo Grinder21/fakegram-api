@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,12 +13,16 @@ import { throwIfMissing } from '../common/prisma-errors';
 
 @Injectable()
 export class AlbumsService {
+  private readonly logger = new Logger(AlbumsService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateAlbumDto) {
-    return this.prisma.album.create({
+    const album = await this.prisma.album.create({
       data: { userId, title: dto.title },
     });
+    this.logger.log(`Album created (album ${album.id}, user ${userId})`);
+    return album;
   }
 
   async findOne(id: string, viewerId: string) {
@@ -94,7 +99,13 @@ export class AlbumsService {
     await this.findOne(id, userId);
 
     try {
-      await this.prisma.album.delete({ where: { id } });
+      const deleted = await this.prisma.album.delete({
+        where: { id },
+        select: { _count: { select: { photos: true } } },
+      });
+      this.logger.log(
+        `Album deleted with ${deleted._count.photos} photo(s) (album ${id}, user ${userId})`,
+      );
     } catch (error) {
       throwIfMissing(error, 'Album not found');
     }
