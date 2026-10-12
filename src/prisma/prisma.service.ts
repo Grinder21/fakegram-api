@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   OnApplicationShutdown,
   OnModuleInit,
 } from '@nestjs/common';
@@ -11,6 +12,8 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnApplicationShutdown
 {
+  private readonly logger = new Logger(PrismaService.name);
+
   constructor(config: ConfigService) {
     super({
       adapter: new PrismaPg({
@@ -23,7 +26,8 @@ export class PrismaService
     await this.$queryRaw`SELECT 1`;
   }
 
-  async onApplicationShutdown() {
+  async onApplicationShutdown(signal?: string) {
     await this.$disconnect();
+    this.logger.log(`Database connection closed (signal: ${signal ?? 'none'})`);
   }
 }
