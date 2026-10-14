@@ -30,13 +30,16 @@ npm run start:dev             # запустить сервер
 
 ## Переменные окружения
 
-| Переменная               | Описание                          | Пример                                     |
-| ------------------------ | --------------------------------- | ------------------------------------------ |
-| `DATABASE_URL`           | Строка подключения к PostgreSQL   | `postgresql://user:pass@localhost:5432/db` |
-| `JWT_ACCESS_SECRET`      | Секрет для подписи access-токенов | случайная строка 32+ символа               |
-| `ACCESS_TOKEN_TTL`       | Срок жизни access-токена          | `15m`                                      |
-| `REFRESH_TOKEN_TTL_DAYS` | Срок жизни refresh-токена в днях  | `30`                                       |
-| `COOKIE_SECURE`          | Форсировать Secure у cookie       | `false`                                    |
-| `CLIENT_ORIGIN`          | Origin фронтенда (CORS)           | `http://localhost:3000`                    |
-| `NODE_ENV`               | Окружение                         | `development`                              |
-| `PORT`                   | Порт                              | `3000`                                     |
+Переменные проверяются при старте схемой в `src/common/env.validation.ts`: приложение не запустится,
+если обязательная переменная не задана или значение некорректно. Примеры значений — в `.env.example`.
+
+| Переменная               | Описание                                                            | По умолчанию            |
+| ------------------------ | ------------------------------------------------------------------- | ----------------------- |
+| `DATABASE_URL`           | Строка подключения к PostgreSQL (`postgres://` или `postgresql://`) | обязательна             |
+| `JWT_ACCESS_SECRET`      | Секрет для подписи access-токенов, минимум 32 символа               | обязательна             |
+| `ACCESS_TOKEN_TTL`       | Срок жизни access-токена: число и единица `s`/`m`/`h`/`d`           | обязательна             |
+| `REFRESH_TOKEN_TTL_DAYS` | Срок жизни refresh-токена в днях, целое число от 1                  | обязательна             |
+| `NODE_ENV`               | Окружение: `development`, `production` или `test`                   | обязательна             |
+| `PORT`                   | Порт HTTP-сервера, 1–65535                                          | `3000`                  |
+| `COOKIE_SECURE`          | Форсировать Secure у refresh-cookie вне production: `true`/`false`  | `false`                 |
+| `CLIENT_ORIGIN`          | Origin фронтенда (CORS)                                             | `http://localhost:5173` |

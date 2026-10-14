@@ -39,21 +39,22 @@ cd fakegram-api
 cp .env.example .env
 ```
 
-Заполнить `.env`:
+Значения из `.env.example` подходят для локальной разработки. Заполнить нужно только `JWT_ACCESS_SECRET` —
+сгенерировать случайную строку минимум из 32 символов:
 
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=fakegram
-PORT=3000
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fakegram
-NODE_ENV=development
-CLIENT_ORIGIN=http://localhost:3000
-COOKIE_SECURE=false
-JWT_ACCESS_SECRET=another-random-secret-for-jwt
-ACCESS_TOKEN_TTL=15m
-REFRESH_TOKEN_TTL_DAYS=30
+```bash
+openssl rand -base64 32
 ```
+
+На Windows без OpenSSL то же самое делает Node:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Переменные окружения проверяются при старте (`src/common/env.validation.ts`): если обязательная переменная
+не задана или значение некорректно, приложение не запустится и назовёт переменную в сообщении об ошибке.
+Описание всех переменных — в [CONTRIBUTING.md](CONTRIBUTING.md#переменные-окружения).
 
 ### 3. Поднять базу данных
 

@@ -19,6 +19,7 @@ import type { JwtPayload } from '../common/types/jwt-payload';
 import { CurrentUserId } from '../common/decorators/current-user-id.decorator';
 import { Throttle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
+import { Environment } from '../common/env.validation';
 
 @Controller('auth')
 export class AuthController {
@@ -121,8 +122,8 @@ export class AuthController {
       sameSite: 'strict',
       path: this.REFRESH_COOKIE_PATH,
       secure:
-        this.config.get<string>('NODE_ENV') === 'production' ||
-        this.config.get<string>('COOKIE_SECURE') === 'true',
+        this.config.get<string>('NODE_ENV') === Environment.Production ||
+        this.config.get<boolean>('COOKIE_SECURE'),
     };
   }
 
