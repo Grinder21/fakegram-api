@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AlbumsModule } from './albums/albums.module';
@@ -11,6 +11,7 @@ import { HealthModule } from './health/health.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
+import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
 
 @Module({
   imports: [
@@ -36,4 +37,8 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter'
     { provide: APP_FILTER, useClass: PrismaExceptionFilter },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpLoggerMiddleware).exclude('health').forRoutes('{*path}');
+  }
+}
