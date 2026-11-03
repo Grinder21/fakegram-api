@@ -20,5 +20,12 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "prisma.config.ts",
+    "vitest.config.mts"
+  ],
+  "exclude": ["node_modules", "dist"]
 }
