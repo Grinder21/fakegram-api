@@ -160,7 +160,7 @@ Cookie: refreshToken=<uuid>:<hex>
   │                               │
   │── POST /auth/login ──────────►│
   │                               │ 1. Проверяет пароль (bcrypt)
-  │                               │ 2. Создаёт запись RefreshToken в БД (хранит bcrypt-хэш)
+  │                               │ 2. Создаёт запись RefreshToken в БД (хранит sha256)
   │                               │ 3. Выдаёт accessToken (JWT, 15 мин)
   │◄─ 200 + Set-Cookie ──────────│    refreshToken в httpOnly cookie (30 дней)
   │
@@ -176,7 +176,7 @@ Cookie: refreshToken=<uuid>:<hex>
 
 **Ключевые решения:**
 
-- Refresh-токен хранится в БД как bcrypt-хэш — утечка таблицы не даёт рабочих токенов
+- Refresh-токен хранится в БД как sha256 — утечка таблицы не даёт рабочих токенов
 - Формат cookie: `<uuid-записи>:<40-байт-hex>` — быстрый поиск по id, проверка по хэшу
 - Rotation: старый refresh удаляется при каждом `/refresh` — replay attack невозможен
 - Один пользователь может иметь **несколько** refresh-токенов (multi-device)
