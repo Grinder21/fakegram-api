@@ -28,6 +28,12 @@ npx prisma migrate deploy     # применить миграции
 npm run start:dev             # запустить сервер
 ```
 
+## Тестирование
+
+Unit-тесты запускаются через `npm test`. Перед pull request также выполни
+`npm run typecheck`, `npm run lint`, `npm run test:cov` и `npm run build`.
+Подробности настройки и учебный пример — в [docs/testing.md](docs/testing.md).
+
 ## Переменные окружения
 
 Переменные проверяются при старте схемой в `src/common/env.validation.ts`: приложение не запустится,

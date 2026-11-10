@@ -89,6 +89,17 @@ API доступен на `http://localhost:3000`.
 
 ---
 
+## Unit-тесты
+
+```bash
+npm test
+npm run test:watch
+npm run test:cov
+npm run typecheck
+```
+
+Тесты выполняются на Vitest без подключения к БД.
+
 ## Эндпоинты
 
 ### Auth
