@@ -25,7 +25,7 @@
     "src/**/*.ts",
     "test/**/*.ts",
     "prisma.config.ts",
-    "vitest.config.mts"
+    "vitest*.config.mts"
   ],
   "exclude": ["node_modules", "dist"]
 }
