@@ -153,6 +153,9 @@ describe('AuthService', () => {
       expect(findUnique).toHaveBeenCalledExactlyOnceWith({
         where: { email: dto.email },
       });
+      expect(comparePassword).not.toHaveBeenCalled();
+      expect(sign).not.toHaveBeenCalled();
+      expect(issue).not.toHaveBeenCalled();
     });
 
     it('throws UnauthorizedException when the password is incorrect', async () => {
@@ -175,6 +178,8 @@ describe('AuthService', () => {
         dto.password,
         user.passwordHash,
       );
+      expect(sign).not.toHaveBeenCalled();
+      expect(issue).not.toHaveBeenCalled();
     });
 
     it('returns the public user and tokens when credentials are valid', async () => {
@@ -317,6 +322,25 @@ describe('AuthService', () => {
       expect(sign).not.toHaveBeenCalled();
       expect(issue).not.toHaveBeenCalled();
     });
+
+    it('propagates Prisma errors that are not uniqueness conflicts', async () => {
+      const dto: RegisterDto = {
+        email: publicUser.email,
+        username: publicUser.username,
+        password: 'Password123!',
+      };
+      const error = new Prisma.PrismaClientKnownRequestError(
+        'Foreign key constraint failed',
+        { code: 'P2003', clientVersion: Prisma.prismaVersion.client },
+      );
+      hashPassword.mockResolvedValue('hashed-password');
+      createUser.mockRejectedValue(error);
+
+      await expect(service.register(dto)).rejects.toBe(error);
+
+      expect(sign).not.toHaveBeenCalled();
+      expect(issue).not.toHaveBeenCalled();
+    });
   });
 
   describe('refresh', () => {
@@ -367,6 +391,17 @@ describe('AuthService', () => {
 
       expect(transaction).toHaveBeenCalledExactlyOnceWith(expect.any(Function));
       expect(consume).toHaveBeenCalledExactlyOnceWith(cookieToken, tx);
+      expect(sign).not.toHaveBeenCalled();
+      expect(issue).not.toHaveBeenCalled();
+    });
+
+    it('propagates an unexpected consume failure without issuing new tokens', async () => {
+      const error = new Error('Refresh token storage unavailable');
+      consume.mockRejectedValue(error);
+
+      await expect(service.refresh('refresh-token')).rejects.toBe(error);
+
+      expect(consume).toHaveBeenCalledExactlyOnceWith('refresh-token', tx);
       expect(sign).not.toHaveBeenCalled();
       expect(issue).not.toHaveBeenCalled();
     });
