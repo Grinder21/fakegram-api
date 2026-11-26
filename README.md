@@ -72,7 +72,7 @@ docker compose ps
 
 ```bash
 npm install
-npx prisma migrate deploy
+npm run prisma:deploy
 ```
 
 ### 5. Запустить сервер
@@ -86,6 +86,28 @@ npm run start
 ```
 
 API доступен на `http://localhost:3000`.
+
+## Команды для базы данных
+
+| Команда | Назначение |
+| --- | --- |
+| `npm run prisma:migrate -- --name add_feature` | Создать и применить миграцию после изменения `prisma/schema.prisma` |
+| `npm run prisma:deploy` | Применить готовые миграции из репозитория |
+| `npm run prisma:generate` | Обновить Prisma Client после изменения схемы |
+| `npm run prisma:status` | Проверить состояние миграций |
+| `npm run prisma:studio` | Открыть данные в Prisma Studio |
+| `npm run prisma:reset` | Удалить данные и заново применить миграции; требует подтверждения |
+| `npm run db:seed` | Добавить демонстрационные данные для разработки |
+
+Все команды используют `DATABASE_URL` из окружения или `.env`.
+`prisma:reset` удаляет все данные в выбранной базе. В Prisma 7 после
+`prisma:migrate` генерация клиента запускается отдельно, а после сброса
+демонстрационные данные добавляются отдельным вызовом `db:seed`.
+
+Seed создаёт двух пользователей, альбом, фотографию и комментарий.
+Повторный запуск сохраняет существующие записи и не добавляет дубликаты.
+Данные для входа и подробный порядок работы — в
+[CONTRIBUTING.md](CONTRIBUTING.md#работа-с-базой-данных).
 
 ---
 
