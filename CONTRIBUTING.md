@@ -28,6 +28,27 @@ npx prisma migrate deploy     # применить миграции
 npm run start:dev             # запустить сервер
 ```
 
+## Сборка и отладка
+
+Source map (`.js.map`) связывает строки собранного JavaScript со строками
+исходного TypeScript. Она помогает отладчику показывать исходные `.ts`-файлы
+и ставить в них точки остановки, а Node.js с поддержкой source maps —
+указывать исходные строки в стеке ошибки.
+
+`npm start`, `npm run start:dev` и `npm run start:debug` явно используют
+`tsconfig.json`, где `sourceMap: true`. Nest CLI включает поддержку source
+maps при запуске Node.js. Для отладки с подключением IDE используй
+`npm run start:debug`.
+
+`npm run build` использует `tsconfig.build.json`, который переопределяет
+`sourceMap` в `false`. Nest CLI очищает `dist` перед сборкой, поэтому карты
+от предыдущего dev-запуска также удаляются. Готовая production-сборка
+запускается командой `npm run start:prod`.
+
+В проекте сборкой занимается SWC. Установленная версия Nest CLI передаёт
+ему настройку `sourceMap` из выбранного TypeScript-конфига. В `.swcrc`
+не задано отдельное переопределение `sourceMaps`.
+
 ## Тестирование
 
 Unit-тесты запускаются через `npm test`. Перед pull request также выполни
