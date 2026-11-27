@@ -28,7 +28,7 @@ cp .env.example .env
 
 docker compose up -d          # поднять PostgreSQL
 npm install                   # установить зависимости
-npx prisma migrate deploy     # применить миграции
+npm run prisma:deploy         # применить готовые миграции
 npm run start:dev             # запустить сервер
 ```
 
@@ -62,6 +62,75 @@ node -e "const env = require('dotenv').parse(require('node:fs').readFileSync('.e
 Также проверь переменную `DATABASE_URL` в окружении терминала: она имеет
 приоритет над `.env`. После исправления повтори `npm install`. Если зависимости
 уже установлены и упал только `postinstall`, достаточно `npm run postinstall`.
+
+## Работа с базой данных
+
+Команды используют подключение `DATABASE_URL` из окружения или `.env`.
+Перед запуском PostgreSQL должен быть доступен.
+
+После изменения `prisma/schema.prisma` создай миграцию с понятным названием
+и обнови сгенерированный клиент:
+
+```bash
+npm run prisma:migrate -- --name add_feature
+npm run prisma:generate
+```
+
+Часть после `--` передаётся Prisma CLI. В этом примере Prisma получает
+`migrate dev --name add_feature`. Команда предназначена для разработки
+и может предложить сброс при расхождении схемы БД с историей миграций.
+
+После получения чужих миграций из репозитория достаточно:
+
+```bash
+npm run prisma:deploy
+npm run prisma:generate
+```
+
+`prisma:deploy` применяет готовые миграции, а `prisma:migrate` также умеет
+создавать новые. Состояние миграций покажет `npm run prisma:status`.
+Для просмотра и редактирования данных запусти `npm run prisma:studio`.
+
+### Демонстрационные данные
+
+После применения миграций выполни:
+
+```bash
+npm run db:seed
+```
+
+Prisma запускает `prisma/seed.ts` через `tsx`. Команда прописана в
+`migrations.seed` файла `prisma.config.ts`. Seed создаёт пользователей Alice
+и Bob, альбом Alice с фотографией и комментарий Bob к этой фотографии.
+
+| Email                      | Username     | Демонстрационный пароль |
+| -------------------------- | ------------ | ----------------------- |
+| `seed.alice@fakegram.test` | `seed_alice` | `FakegramDemo9!`        |
+| `seed.bob@fakegram.test`   | `seed_bob`   | `FakegramDemo9!`        |
+
+Пароли сохраняются как bcrypt-хеши, как при обычной регистрации. Эти аккаунты
+предназначены для локальной разработки; при `NODE_ENV=production` seed
+завершится ошибкой до подключения к БД.
+
+Записи создаются одной транзакцией. Повторный запуск использует `upsert`:
+пользователи находятся по email, остальные записи — по постоянным UUID.
+Существующие записи сохраняются без перезаписи полей, поэтому изменённый
+вручную пароль или подпись фотографии не сбросятся. Новые экземпляры данных
+при повторном запуске не создаются.
+
+### Сброс локальной базы
+
+`npm run prisma:reset` удаляет все данные в базе из `DATABASE_URL`
+и заново применяет миграции. Команда требует подтверждения. После сброса
+демонстрационные данные нужно добавить явно:
+
+```bash
+npm run prisma:reset
+npm run prisma:generate
+npm run db:seed
+```
+
+В Prisma 7 `migrate dev` и `migrate reset` не запускают seed автоматически.
 
 ## Тестирование
 
