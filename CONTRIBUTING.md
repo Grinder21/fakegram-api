@@ -6,7 +6,7 @@
 
 ### Требования
 
-- Node.js 24.x LTS — точная версия в `.nvmrc` (`nvm use`)
+- Node.js 24.x LTS — точная версия в `.nvmrc`; сначала `nvm install`, затем `nvm use`
 - Docker Desktop
 - Git
 
@@ -16,8 +16,12 @@
 ### Первый запуск
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Grinder21/fakegram-api.git
 cd fakegram-api
+
+# macOS/Linux, если nvm уже установлен
+nvm install
+nvm use
 
 cp .env.example .env
 # заполни .env (см. README.md → «Запуск проекта локально»)
@@ -27,6 +31,37 @@ npm install                   # установить зависимости
 npm run prisma:deploy         # применить готовые миграции
 npm run start:dev             # запустить сервер
 ```
+
+Для Windows используй шаг с nvm-windows из
+[README](README.md#1-клонировать-репозиторий). Если PowerShell блокирует
+`npm.ps1`/`npx.ps1`, запускай `npm.cmd`/`npx.cmd`.
+
+### Ошибка DATABASE_URL при установке зависимостей
+
+`npm install` запускает `postinstall` → `prisma generate`. Конфигурация
+`prisma.config.ts` загружает `.env` и читает `DATABASE_URL` уже при генерации
+клиента; соединение с PostgreSQL для самой генерации не требуется.
+
+Если установка заканчивается сообщением
+`PrismaConfigEnvError: Cannot resolve environment variable: DATABASE_URL`,
+проверь, что в корне проекта есть файл `.env`, а в нём — непустой `DATABASE_URL`.
+Если файла нет, скопируй `.env.example` и заполни JWT-секрет по README.
+
+Самопроверка разбора `.env` (значения секретов не выводятся):
+
+```bash
+node -e "const env = require('dotenv').parse(require('node:fs').readFileSync('.env')); if (!env.DATABASE_URL) throw new Error('DATABASE_URL is missing or empty'); const url = new URL(env.DATABASE_URL); console.log({ postgresUrl: ['postgres:', 'postgresql:'].includes(url.protocol), hasHost: Boolean(url.hostname), hasDatabase: url.pathname.length > 1, missing: ['NODE_ENV', 'JWT_ACCESS_SECRET', 'ACCESS_TOKEN_TTL', 'REFRESH_TOKEN_TTL_DAYS'].filter(key => !env[key]) });"
+```
+
+После заполнения `.env` ожидаются три значения `true` и пустой список
+`missing`. `ENOENT` означает, что файла `.env` нет; ошибка URL или `false` —
+что строка подключения повреждена. Каждая переменная должна быть на отдельной
+строке: потерянный перенос может приклеить `NODE_ENV` или другой ключ к URL,
+и этот ключ попадёт в список `missing`.
+
+Также проверь переменную `DATABASE_URL` в окружении терминала: она имеет
+приоритет над `.env`. После исправления повтори `npm install`. Если зависимости
+уже установлены и упал только `postinstall`, достаточно `npm run postinstall`.
 
 ## Работа с базой данных
 
@@ -68,10 +103,10 @@ Prisma запускает `prisma/seed.ts` через `tsx`. Команда пр
 `migrations.seed` файла `prisma.config.ts`. Seed создаёт пользователей Alice
 и Bob, альбом Alice с фотографией и комментарий Bob к этой фотографии.
 
-| Email | Username | Демонстрационный пароль |
-| --- | --- | --- |
-| `seed.alice@fakegram.test` | `seed_alice` | `FakegramDemo9!` |
-| `seed.bob@fakegram.test` | `seed_bob` | `FakegramDemo9!` |
+| Email                      | Username     | Демонстрационный пароль |
+| -------------------------- | ------------ | ----------------------- |
+| `seed.alice@fakegram.test` | `seed_alice` | `FakegramDemo9!`        |
+| `seed.bob@fakegram.test`   | `seed_bob`   | `FakegramDemo9!`        |
 
 Пароли сохраняются как bcrypt-хеши, как при обычной регистрации. Эти аккаунты
 предназначены для локальной разработки; при `NODE_ENV=production` seed

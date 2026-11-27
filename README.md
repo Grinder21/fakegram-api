@@ -19,7 +19,7 @@
 
 ### Предварительные требования
 
-- [Node.js](https://nodejs.org/) 24.x LTS. Точная версия — в `.nvmrc`, так что `nvm use` подхватит её сам
+- [Node.js](https://nodejs.org/) 24.x LTS. Точная версия — в `.nvmrc`; установка через nvm описана ниже
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (для PostgreSQL)
 - npm
 
@@ -29,9 +29,31 @@
 ### 1. Клонировать репозиторий
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Grinder21/fakegram-api.git
 cd fakegram-api
 ```
+
+Для macOS/Linux с установленным [nvm](https://github.com/nvm-sh/nvm#nvmrc):
+
+```bash
+nvm install
+nvm use
+```
+
+`nvm install` читает `.nvmrc` и устанавливает нужную версию, если её ещё нет.
+Для последующих запусков достаточно `nvm use`.
+
+На Windows с [nvm-windows](https://docs.nvm-windows.com/) передай версию явно
+(PowerShell):
+
+```powershell
+$nodeVersion = (Get-Content .nvmrc).Trim()
+nvm install $nodeVersion
+nvm use $nodeVersion
+```
+
+Если PowerShell блокирует `npm.ps1` или `npx.ps1`, используй `npm.cmd` и
+`npx.cmd` вместо `npm` и `npx` в командах ниже.
 
 ### 2. Создать файл `.env`
 
@@ -75,6 +97,10 @@ npm install
 npm run prisma:deploy
 ```
 
+`npm install` выполняет `postinstall` → `prisma generate`, поэтому `.env` с
+заполненным `DATABASE_URL` нужен уже на этом шаге. Если генерация падает,
+см. [диагностику DATABASE_URL](CONTRIBUTING.md#ошибка-database_url-при-установке-зависимостей).
+
 Для полей `User.email`, `User.username` и `Album.title` используется тип
 `citext` PostgreSQL, который сравнивает строки без учёта регистра.
 Расширение включается автоматически в
@@ -103,15 +129,15 @@ API доступен на `http://localhost:3000`.
 
 ## Команды для базы данных
 
-| Команда | Назначение |
-| --- | --- |
+| Команда                                        | Назначение                                                          |
+| ---------------------------------------------- | ------------------------------------------------------------------- |
 | `npm run prisma:migrate -- --name add_feature` | Создать и применить миграцию после изменения `prisma/schema.prisma` |
-| `npm run prisma:deploy` | Применить готовые миграции из репозитория |
-| `npm run prisma:generate` | Обновить Prisma Client после изменения схемы |
-| `npm run prisma:status` | Проверить состояние миграций |
-| `npm run prisma:studio` | Открыть данные в Prisma Studio |
-| `npm run prisma:reset` | Удалить данные и заново применить миграции; требует подтверждения |
-| `npm run db:seed` | Добавить демонстрационные данные для разработки |
+| `npm run prisma:deploy`                        | Применить готовые миграции из репозитория                           |
+| `npm run prisma:generate`                      | Обновить Prisma Client после изменения схемы                        |
+| `npm run prisma:status`                        | Проверить состояние миграций                                        |
+| `npm run prisma:studio`                        | Открыть данные в Prisma Studio                                      |
+| `npm run prisma:reset`                         | Удалить данные и заново применить миграции; требует подтверждения   |
+| `npm run db:seed`                              | Добавить демонстрационные данные для разработки                     |
 
 Все команды используют `DATABASE_URL` из окружения или `.env`.
 `prisma:reset` удаляет все данные в выбранной базе. В Prisma 7 после
@@ -125,7 +151,9 @@ Seed создаёт двух пользователей, альбом, фото�
 
 ---
 
-## Unit-тесты
+## Тестирование
+
+Unit-тесты выполняются на Vitest без подключения к БД:
 
 ```bash
 npm test
@@ -134,28 +162,64 @@ npm run test:cov
 npm run typecheck
 ```
 
-Тесты выполняются на Vitest без подключения к БД.
+HTTP E2E-тесты используют настоящие сервисы и отдельную PostgreSQL-базу
+`fakegram_e2e`. После создания базы и применения миграций:
+
+```bash
+npm run test:e2e
+```
+
+Готовые команды подготовки базы и описание сценариев — в
+[docs/testing.md](docs/testing.md#подготовка-базы).
 
 ## Эндпоинты
 
 ### Auth
 
-| Метод | Путь             | Доступ     | Описание                |
-| ----- | ---------------- | ---------- | ----------------------- |
-| POST  | `/auth/register` | Публичный  | Регистрация             |
-| POST  | `/auth/login`    | Публичный  | Вход                    |
-| POST  | `/auth/refresh`  | Публичный  | Обновить access-токен   |
-| POST  | `/auth/logout`   | Bearer JWT | Выход со всех устройств |
-| GET   | `/auth/me`       | Bearer JWT | Текущий пользователь    |
+| Метод | Путь             | Доступ                | Описание                          |
+| ----- | ---------------- | --------------------- | --------------------------------- |
+| POST  | `/auth/register` | Публичный             | Регистрация                       |
+| POST  | `/auth/login`    | Публичный             | Вход                              |
+| POST  | `/auth/refresh`  | Cookie `refreshToken` | Обновить access- и refresh-токены |
+| POST  | `/auth/logout`   | Bearer JWT            | Выход со всех устройств           |
+| GET   | `/auth/me`       | Bearer JWT            | Текущий пользователь              |
 
-### Остальные ресурсы (в разработке)
+### Пользователи, альбомы, фото и комментарии
 
-| Метод        | Путь        | Доступ | Описание     |
-| ------------ | ----------- | ------ | ------------ |
-| GET/POST/... | `/users`    | —      | Пользователи |
-| GET/POST/... | `/albums`   | —      | Альбомы      |
-| GET/POST/... | `/photos`   | —      | Фотографии   |
-| GET/POST/... | `/comments` | —      | Комментарии  |
+Все маршруты в таблице требуют `Authorization: Bearer <accessToken>`.
+Идентификаторы — UUID.
+
+| Метод  | Путь                   | Доступ                                        | Описание                                                          |
+| ------ | ---------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
+| GET    | `/users/:id`           | Любой авторизованный пользователь             | Профиль без хеша пароля                                           |
+| PATCH  | `/users/:id`           | Владелец профиля                              | Изменить `displayName`, `avatarUrl`, `bio`                        |
+| GET    | `/users/:id/albums`    | Владелец профиля                              | Список своих альбомов                                             |
+| POST   | `/albums`              | Любой авторизованный пользователь             | Создать свой альбом: `{ title }`                                  |
+| GET    | `/albums/:id`          | Владелец альбома                              | Получить альбом                                                   |
+| GET    | `/albums/:id/photos`   | Владелец альбома                              | Список фотографий альбома                                         |
+| PATCH  | `/albums/:id`          | Владелец альбома                              | Изменить `title`                                                  |
+| DELETE | `/albums/:id`          | Владелец альбома                              | Удалить альбом и его фото, ответ `204`                            |
+| POST   | `/photos`              | Владелец целевого альбома                     | Добавить фото по URL: `{ albumId, url, thumbnailUrl?, caption? }` |
+| GET    | `/photos/:id`          | Владелец альбома с фото                       | Получить фото                                                     |
+| GET    | `/photos/:id/comments` | Владелец альбома с фото                       | Список комментариев                                               |
+| PATCH  | `/photos/:id`          | Владелец альбома с фото                       | Изменить `caption`                                                |
+| DELETE | `/photos/:id`          | Владелец альбома с фото                       | Удалить фото, ответ `204`                                         |
+| POST   | `/comments`            | Любой авторизованный пользователь             | Комментарий к существующему фото: `{ photoId, body }`             |
+| DELETE | `/comments/:id`        | Автор комментария или владелец альбома с фото | Удалить комментарий, ответ `204`                                  |
+
+Создание комментария пока проверяет только существование фото. Согласование
+этого права с доступом к чтению отслеживается в [#111](https://github.com/Grinder21/fakegram-api/issues/111).
+
+Списки альбомов, фото и комментариев принимают `?limit=20&cursor=<uuid>`.
+`limit` по умолчанию — 20, допустимый диапазон — 1–100. Ответ:
+`{ items, hasMore, nextCursor }`. Для первой страницы `cursor` не передаётся;
+для следующей используй `nextCursor`, пока `hasMore` равен `true`.
+
+### Проверка доступности
+
+`GET /health` доступен без JWT и возвращает
+`{ "status": "ok", "timestamp": "<ISO-дата>" }`. Это проверка HTTP-приложения;
+отдельный запрос к БД этот эндпоинт не выполняет.
 
 ### Пример: регистрация
 
@@ -166,12 +230,12 @@ Content-Type: application/json
 {
   "email": "user@example.com",
   "username": "johndoe",
-  "password": "secret123",
+  "password": "MangoTrail7!orbit",
   "displayName": "John Doe"
 }
 ```
 
-Ответ `201`:
+Ответ `201` (фрагмент):
 
 ```json
 {
@@ -193,48 +257,65 @@ Authorization: Bearer eyJhbGci...
 
 ```http
 POST /auth/refresh
-Cookie: refreshToken=<uuid>:<hex>
+Cookie: refreshToken=<80-символьная-hex-строка>
 ```
 
-Ответ `200` — новый `accessToken` в теле, новый `refreshToken` в cookie (старый инвалидируется).
+Ответ `200` — `user` и новый `accessToken` в теле, новый `refreshToken` в cookie.
+Старый refresh-токен помечается использованным.
 
 ---
 
 ## Как устроена аутентификация
 
+```mermaid
+sequenceDiagram
+    participant C as Клиент
+    participant A as API
+    participant D as PostgreSQL
+    C->>A: POST /auth/login, email и пароль
+    A->>D: Найти пользователя
+    D-->>A: Пользователь и хеш пароля
+    Note over A: Проверить пароль через bcrypt.compare
+    A->>D: Сохранить SHA-256 нового refresh-токена и новое familyId
+    A-->>C: user, accessToken и Set-Cookie с refresh-токеном
+    C->>A: POST /auth/refresh, cookie refreshToken
+    Note over A: Вычислить SHA-256 токена из cookie
+    A->>D: Атомарно пометить неиспользованный непросроченный токен used=true
+    D-->>A: Пользователь и familyId
+    A->>D: Сохранить SHA-256 нового токена с тем же familyId
+    A-->>C: user, новый accessToken и новая refresh-cookie
 ```
-Клиент                          Сервер
-  │                               │
-  │── POST /auth/login ──────────►│
-  │                               │ 1. Проверяет пароль (bcrypt)
-  │                               │ 2. Создаёт запись RefreshToken в БД (хранит sha256)
-  │                               │ 3. Выдаёт accessToken (JWT, 15 мин)
-  │◄─ 200 + Set-Cookie ──────────│    refreshToken в httpOnly cookie (30 дней)
-  │
-  │ ... через 15 минут accessToken истёк ...
-  │
-  │── POST /auth/refresh ────────►│
-  │   Cookie: refreshToken=id:raw │ 1. Ищет запись по id
-  │                               │ 2. Сверяет raw с хэшем в БД (bcrypt.compare)
-  │                               │ 3. УДАЛЯЕТ старую запись (rotation!)
-  │                               │ 4. Создаёт новую запись
-  │◄─ 200 + Set-Cookie ──────────│ 5. Выдаёт новый accessToken + новый refreshToken
-```
+
+Пароль хранится как bcrypt-хеш. Refresh-токен — случайные 40 байт,
+представленные 80 hex-символами; в БД хранится только его SHA-256.
+При регистрации и каждом входе создаётся независимое семейство refresh-токенов
+(`familyId`). Ротация сохраняет это семейство. Пометка старого токена и
+выпуск нового выполняются в одной транзакции.
+
+Использованные токены остаются в БД для обнаружения повторного использования.
+Повторная отправка использованного токена возвращает `401` и отзывает всё
+его семейство, включая новый токен. Другие семейства пользователя сохраняются.
+При предъявлении просроченного токена его семейство тоже отзывается;
+неизвестный токен получает `401` без отзыва других сессий.
 
 **Ключевые решения:**
 
-- Refresh-токен хранится в БД как sha256 — утечка таблицы не даёт рабочих токенов
-- Формат cookie: `<uuid-записи>:<40-байт-hex>` — быстрый поиск по id, проверка по хэшу
-- Rotation: старый refresh удаляется при каждом `/refresh` — replay attack невозможен
-- Один пользователь может иметь **несколько** refresh-токенов (multi-device)
-- `/auth/logout` удаляет **все** refresh-токены пользователя — выход завершает
-  сессии на всех устройствах сразу
+- Access-токен — JWT с `sub` (UUID пользователя) и `username`; передаётся в
+  `Authorization: Bearer <accessToken>`.
+- Refresh-токен передаётся только в cookie `refreshToken`, без UUID-префикса.
+  Поиск записи выполняется по SHA-256, `bcrypt.compare` используется только для пароля.
+- Cookie имеет `HttpOnly`, `SameSite=Strict` и `Path=/auth/refresh`.
+  `Secure` включён в production или при `COOKIE_SECURE=true`.
+- Сроки из `.env.example`: access — 15 минут (`ACCESS_TOKEN_TTL=15m`),
+  refresh — 30 дней (`REFRESH_TOKEN_TTL_DAYS=30`). Их можно менять в конфигурации.
+- `/auth/logout` удаляет **все** refresh-токены пользователя и очищает cookie.
+  Уже выданные access-токены действуют до истечения своего срока.
 
 ---
 
 ## Статус и roadmap
 
-Состояние после stage-4 (октябрь 2026).
+Состояние на ноябрь 2026.
 
 ### Сделано
 
@@ -246,6 +327,7 @@ Cookie: refreshToken=<uuid>:<hex>
 | Наблюдаемость  | лог HTTP-запросов (метод, URL, статус, время, пользователь), бизнес-логи в `AuthService` и `AlbumsService`, `GET /health`                                              | #44, #46                               |
 | Эксплуатация   | graceful shutdown, сжатие ответов gzip/brotli                                                                                                                          | #35, #47, #48                          |
 | Данные         | CRUD альбомов и фото, комментарии (создание, удаление, список), профили, курсорная пагинация, глобальный фильтр ошибок Prisma                                          | #6, #7, #8, #37, #38                   |
+| Тесты          | Unit-тесты AuthService, RefreshTokenService, AlbumsService, JwtGuard и CurrentUser; HTTP E2E авторизации с отдельной БД                                                | #52, #53, #54, #55, #56                |
 
 ### Осталось для интеграции с фронтом
 
@@ -267,6 +349,5 @@ Cookie: refreshToken=<uuid>:<hex>
 - JSON-формат логов для production (#115, остаток #44).
 - Ответ логина для существующего и несуществующего email отличается по времени — по нему можно узнать, зарегистрирован ли email (#116, продолжение #25).
 - Деплой: refresh-cookie с `sameSite=strict` не уходит между разными доменами, поэтому фронт и API нужно размещать на одном домене (поддомен или reverse proxy).
-- README: раздел «Как устроена аутентификация» и таблица эндпоинтов устарели.
 
-Дальше по плану: stage-5 — тесты, stage-6 — конфигурация и Docker, stage-7 — стратегия тестирования.
+Дальше по плану: stage-6 — конфигурация и Docker, stage-7 — стратегия тестирования.

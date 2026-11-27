@@ -27,6 +27,75 @@ npm run test:e2e
 что и база разработки. Её нужно создать и применить к ней все существующие
 миграции из `prisma/migrations` перед первым запуском тестов.
 
+Команды ниже запускаются из корня репозитория после установки зависимостей.
+Они используют локальные значения из `.env.example`: пользователь и пароль
+`postgres`, порт `5432`. Если ты менял их, замени пользователя в командах и
+данные подключения в URL. Имя тестовой базы должно оставаться `fakegram_e2e`.
+
+1. Подними PostgreSQL из `docker-compose.yml` и проверь готовность:
+
+   ```bash
+   docker compose up -d db
+   docker compose exec -T db pg_isready -U postgres -d postgres
+   ```
+
+   Дождись ответа `accepting connections`. Если сервер ещё запускается,
+   повтори `pg_isready`.
+
+2. Создай тестовую базу на этом сервере (один раз):
+
+   ```bash
+   docker compose exec -T db createdb -U postgres fakegram_e2e
+   ```
+
+   Если база уже существует, пропусти создание и примени миграции следующим
+   шагом. Удалять существующую базу или данные разработки не требуется.
+
+3. Создай локальный файл `.env.test.local` с подключением для E2E:
+
+   ```dotenv
+   E2E_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fakegram_e2e
+   ```
+
+   Файл уже добавлен в `.gitignore`. Если он существует, добавь или обнови
+   в нём только `E2E_DATABASE_URL`. Используй тот же URL для миграций ниже.
+
+4. Примени миграции к тестовой базе и запусти тесты.
+
+   Bash (macOS/Linux):
+
+   ```bash
+   DATABASE_URL='postgresql://postgres:postgres@localhost:5432/fakegram_e2e' npx prisma migrate deploy
+   npm run test:e2e
+   ```
+
+   PowerShell (Windows):
+
+   ```powershell
+   $previousDatabaseUrl = $env:DATABASE_URL
+   try {
+     $env:DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/fakegram_e2e'
+     npx.cmd prisma migrate deploy
+     if ($LASTEXITCODE -ne 0) { throw 'E2E database migration failed' }
+   } finally {
+     if ($null -eq $previousDatabaseUrl) {
+       Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+     } else {
+       $env:DATABASE_URL = $previousDatabaseUrl
+     }
+   }
+   npm.cmd run test:e2e
+   ```
+
+   Prisma CLI читает `DATABASE_URL` из `prisma.config.ts`; `E2E_DATABASE_URL`
+   из `.env.test.local` используется конфигурацией Vitest. Поэтому при
+   миграциях URL задаётся отдельно. Bash ограничивает его одной командой,
+   а блок PowerShell восстанавливает прежнее значение даже при ошибке.
+   `.env` с базой разработки остаётся прежним.
+
+Для последующих запусков достаточно поднятой БД с актуальными миграциями и
+`npm run test:e2e`. После появления новых миграций повтори шаг 4.
+
 По умолчанию конфигурация читает локальный `DATABASE_URL` из окружения или
 `.env` и заменяет имя базы на `fakegram_e2e`. Обычный `.env` остаётся прежним.
 Для другого подключения задай `E2E_DATABASE_URL` в окружении или в
