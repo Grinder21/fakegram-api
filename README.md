@@ -75,6 +75,20 @@ npm install
 npm run prisma:deploy
 ```
 
+Для полей `User.email`, `User.username` и `Album.title` используется тип
+`citext` PostgreSQL, который сравнивает строки без учёта регистра.
+Расширение включается автоматически в
+[первой миграции](prisma/migrations/20260608164443_init/migration.sql),
+до создания таблиц:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS "citext";
+```
+
+Модуль `citext` должен быть доступен на сервере PostgreSQL; в используемом
+Docker-образе `postgres:18-alpine` он уже есть. Для активации расширения
+пользователю, применяющему миграции, нужно право `CREATE` на целевую базу.
+
 ### 5. Запустить сервер
 
 ```bash
